@@ -1,0 +1,10 @@
+export { default as AdminLogin } from "./AdminLogin";
+export { default as AdminLayout } from "./AdminLayout";
+export { default as AdminDashboard } from "./AdminDashboard";
+export { default as AdminTickets } from "./AdminTickets";
+export { default as AdminTicketDetail } from "./AdminTicketDetail";
+export { default as AdminUsers } from "./AdminUsers";
+export { default as AdminReports } from "./AdminReports";
+export { default as AdminSettings } from "./AdminSettings";
+export { default as Reports } from "./Reports";
+export { default as Settings } from "./Settings";
