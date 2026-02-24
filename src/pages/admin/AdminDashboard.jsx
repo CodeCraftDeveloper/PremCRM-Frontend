@@ -61,13 +61,8 @@ const AdminDashboard = () => {
     );
   }
 
-  const {
-    overview,
-    clientStats,
-    monthlyTrend,
-    topMarketers,
-    recentClients,
-  } = adminStats;
+  const { overview, clientStats, monthlyTrend, topMarketers, recentClients } =
+    adminStats;
 
   const statusChartData = STATUS_KEYS.map((key) => ({
     name: key,
@@ -89,17 +84,17 @@ const AdminDashboard = () => {
       .slice(0, 5) || [];
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col gap-1">
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+    <div className="space-y-4 sm:space-y-6">
+      <div className="flex flex-col gap-1 sm:gap-2">
+        <h1 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">
           Admin Dashboard
         </h1>
-        <p className="text-gray-500 dark:text-gray-400">
+        <p className="text-sm sm:text-base text-gray-500 dark:text-gray-400">
           Overview of your CRM system
         </p>
       </div>
 
-      <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3 sm:gap-4 md:gap-6 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard
           title="Total Users"
           value={overview?.totalUsers || 0}
@@ -130,14 +125,14 @@ const AdminDashboard = () => {
         />
       </div>
 
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-        <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-800">
-          <h3 className="mb-4 text-lg font-semibold text-gray-900 dark:text-white">
+      <div className="grid grid-cols-1 gap-4 sm:gap-6 lg:grid-cols-2">
+        <div className="rounded-lg sm:rounded-xl border border-gray-200 bg-white p-4 sm:p-6 shadow-sm dark:border-gray-700 dark:bg-gray-800">
+          <h3 className="mb-3 sm:mb-4 text-base sm:text-lg font-semibold text-gray-900 dark:text-white">
             Client Status Distribution
           </h3>
-          <div className="h-64">
+          <div className="h-48 sm:h-64">
             {statusChartData.length === 0 ? (
-              <div className="flex h-full items-center justify-center rounded-lg border border-dashed border-gray-300 text-sm text-gray-500 dark:border-gray-600 dark:text-gray-400">
+              <div className="flex h-full items-center justify-center rounded-lg border border-dashed border-gray-300 text-xs sm:text-sm text-gray-500 dark:border-gray-600 dark:text-gray-400">
                 No client status data yet
               </div>
             ) : (
@@ -147,8 +142,8 @@ const AdminDashboard = () => {
                     data={statusChartData}
                     cx="50%"
                     cy="50%"
-                    innerRadius={60}
-                    outerRadius={80}
+                    innerRadius={40}
+                    outerRadius={60}
                     paddingAngle={5}
                     dataKey="value"
                   >
@@ -166,11 +161,11 @@ const AdminDashboard = () => {
           </div>
         </div>
 
-        <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-800">
-          <h3 className="mb-4 text-lg font-semibold text-gray-900 dark:text-white">
+        <div className="rounded-lg sm:rounded-xl border border-gray-200 bg-white p-4 sm:p-6 shadow-sm dark:border-gray-700 dark:bg-gray-800">
+          <h3 className="mb-3 sm:mb-4 text-base sm:text-lg font-semibold text-gray-900 dark:text-white">
             Client Acquisition Trends
           </h3>
-          <div className="h-64">
+          <div className="h-48 sm:h-64">
             {trendsChartData.length === 0 ? (
               <div className="flex h-full items-center justify-center rounded-lg border border-dashed border-gray-300 text-sm text-gray-500 dark:border-gray-600 dark:text-gray-400">
                 No trend data available
@@ -190,103 +185,108 @@ const AdminDashboard = () => {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-        <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-800">
-          <div className="mb-4 flex items-center justify-between">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+      <div className="grid grid-cols-1 gap-4 sm:gap-6 lg:grid-cols-3">
+        <div className="rounded-lg sm:rounded-xl border border-gray-200 bg-white p-4 sm:p-6 shadow-sm dark:border-gray-700 dark:bg-gray-800">
+          <div className="mb-3 sm:mb-4 flex items-center justify-between">
+            <h3 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white">
               Top Performers
             </h3>
-            <TrendingUp className="h-5 w-5 text-green-500" />
+            <TrendingUp className="h-4 w-4 sm:h-5 sm:w-5 text-green-500" />
           </div>
-          <div className="space-y-4">
+          <div className="space-y-3">
             {topMarketers?.length ? (
               topMarketers.slice(0, 5).map((user, index) => (
-                <div key={user.email || index} className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-blue-100 text-sm font-medium text-blue-600">
+                <div
+                  key={user.email || index}
+                  className="flex items-center justify-between"
+                >
+                  <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+                    <div className="flex h-7 w-7 sm:h-8 sm:w-8 items-center justify-center rounded-full bg-blue-100 text-xs sm:text-sm font-medium text-blue-600 flex-shrink-0">
                       {index + 1}
                     </div>
-                    <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                    <span className="text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 truncate">
                       {user.name}
                     </span>
                   </div>
-                  <span className="text-sm text-gray-500 dark:text-gray-400">
-                    {user.totalClients} clients
+                  <span className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 flex-shrink-0">
+                    {user.totalClients}
                   </span>
                 </div>
               ))
             ) : (
-              <p className="py-4 text-center text-sm text-gray-500 dark:text-gray-400">
+              <p className="py-4 text-center text-xs sm:text-sm text-gray-500 dark:text-gray-400">
                 No performance data yet
               </p>
             )}
           </div>
         </div>
 
-        <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-800">
-          <div className="mb-4 flex items-center justify-between">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+        <div className="rounded-lg sm:rounded-xl border border-gray-200 bg-white p-4 sm:p-6 shadow-sm dark:border-gray-700 dark:bg-gray-800">
+          <div className="mb-3 sm:mb-4 flex items-center justify-between">
+            <h3 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white">
               Recent Clients
             </h3>
             <Link
               to="/admin/clients"
-              className="flex items-center gap-1 text-sm text-blue-600 hover:text-blue-700"
+              className="flex items-center gap-1 text-xs sm:text-sm text-blue-600 hover:text-blue-700"
             >
-              View all <ArrowRight className="h-4 w-4" />
+              View all <ArrowRight className="h-3 w-3 sm:h-4 sm:w-4" />
             </Link>
           </div>
-          <div className="space-y-3">
+          <div className="space-y-2 sm:space-y-3">
             {recentClients?.length ? (
               recentClients.slice(0, 5).map((client) => (
                 <div
                   key={client._id}
-                  className="flex items-center justify-between rounded-lg bg-gray-50 p-3 dark:bg-gray-700/50"
+                  className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 rounded-lg bg-gray-50 p-2 sm:p-3 dark:bg-gray-700/50"
                 >
-                  <div>
-                    <p className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                  <div className="min-w-0">
+                    <p className="text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 truncate">
                       {client.name}
                     </p>
-                    <p className="text-xs text-gray-500 dark:text-gray-400">
+                    <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
                       {client.companyName}
                     </p>
                   </div>
-                  <StatusBadge status={client.followUpStatus} />
+                  <div className="flex-shrink-0">
+                    <StatusBadge status={client.followUpStatus} />
+                  </div>
                 </div>
               ))
             ) : (
-              <p className="py-4 text-center text-sm text-gray-500 dark:text-gray-400">
+              <p className="py-4 text-center text-xs sm:text-sm text-gray-500 dark:text-gray-400">
                 No recent clients
               </p>
             )}
           </div>
         </div>
 
-        <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-800">
-          <div className="mb-4 flex items-center justify-between">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+        <div className="rounded-lg sm:rounded-xl border border-gray-200 bg-white p-4 sm:p-6 shadow-sm dark:border-gray-700 dark:bg-gray-800">
+          <div className="mb-3 sm:mb-4 flex items-center justify-between">
+            <h3 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white">
               Upcoming Follow-ups
             </h3>
-            <Clock className="h-5 w-5 text-orange-500" />
+            <Clock className="h-4 w-4 sm:h-5 sm:w-5 text-orange-500" />
           </div>
-          <div className="space-y-3">
+          <div className="space-y-2 sm:space-y-3">
             {upcomingFollowUps.map((client) => (
               <div
                 key={client._id}
-                className="flex items-center justify-between rounded-lg bg-gray-50 p-3 dark:bg-gray-700/50"
+                className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 rounded-lg bg-gray-50 p-2 sm:p-3 dark:bg-gray-700/50"
               >
-                <div>
-                  <p className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                <div className="min-w-0">
+                  <p className="text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 truncate">
                     {client.name}
                   </p>
                   <p className="text-xs text-gray-500 dark:text-gray-400">
                     {format(new Date(client.nextFollowUpDate), "MMM d, yyyy")}
                   </p>
                 </div>
-                <AlertCircle className="h-5 w-5 text-orange-500" />
+                <AlertCircle className="h-4 w-4 sm:h-5 sm:w-5 text-orange-500 flex-shrink-0" />
               </div>
             ))}
             {upcomingFollowUps.length === 0 && (
-              <p className="text-sm text-gray-500 dark:text-gray-400 text-center py-4">
+              <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 text-center py-4">
                 No upcoming follow-ups
               </p>
             )}

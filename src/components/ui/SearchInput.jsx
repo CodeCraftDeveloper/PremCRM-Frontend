@@ -18,7 +18,7 @@ const SearchInput = ({
   return (
     <div className={`relative flex items-center ${className}`}>
       <Search
-        className={`absolute left-3 h-5 w-5 transition-colors ${
+        className={`absolute left-3 h-4 w-4 sm:h-5 sm:w-5 transition-colors ${
           isFocused ? "text-blue-500" : "text-gray-400"
         }`}
       />
@@ -29,7 +29,7 @@ const SearchInput = ({
         onFocus={() => setIsFocused(true)}
         onBlur={() => setIsFocused(false)}
         placeholder={placeholder}
-        className="w-full rounded-lg border border-gray-300 py-2.5 pl-10 pr-10 text-sm transition-colors focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-800 dark:text-white"
+        className="w-full rounded-lg border border-gray-300 py-2 sm:py-2.5 pl-9 sm:pl-10 pr-9 sm:pr-10 text-xs sm:text-sm transition-colors focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-800 dark:text-white"
       />
       {value && (
         <button

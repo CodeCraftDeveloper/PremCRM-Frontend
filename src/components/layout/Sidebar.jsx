@@ -13,13 +13,16 @@ import {
   Building2,
   TrendingUp,
 } from "lucide-react";
-import { toggleSidebar } from "../../store/slices/uiSlice";
+import {
+  toggleSidebar,
+  setMobileSidebarOpen,
+} from "../../store/slices/uiSlice";
 import { connectSocket, getSocket } from "../../services/socket";
 
 const Sidebar = ({ role = "admin" }) => {
   const dispatch = useDispatch();
   const location = useLocation();
-  const { sidebarCollapsed } = useSelector((state) => state.ui);
+  const { sidebarCollapsed, mobileSidebarOpen } = useSelector((state) => state.ui);
   const [isLiveOnline, setIsLiveOnline] = useState(false);
 
   const adminMenuItems = [
@@ -82,95 +85,141 @@ const Sidebar = ({ role = "admin" }) => {
     };
   }, [role]);
 
+  useEffect(() => {
+    dispatch(setMobileSidebarOpen(false));
+  }, [dispatch, location.pathname]);
+
+  const handleMobileClose = () => dispatch(setMobileSidebarOpen(false));
+
+  const renderNav = (isMobile = false) => (
+    <nav className="mt-4 px-2">
+      <ul className="space-y-1">
+        {menuItems.map((item) => {
+          const Icon = item.icon;
+          const active = isActive(item);
+
+          return (
+            <li key={item.path}>
+              <Link
+                to={item.path}
+                onClick={isMobile ? handleMobileClose : undefined}
+                className={`flex items-center gap-3 rounded-lg px-3 py-2.5 transition-colors ${
+                  active
+                    ? "bg-blue-600 text-white"
+                    : "text-gray-300 hover:bg-gray-800 hover:text-white"
+                }`}
+                title={sidebarCollapsed ? item.label : ""}
+              >
+                <Icon className="h-5 w-5 flex-shrink-0" />
+                {(!sidebarCollapsed || isMobile) && (
+                  <span className="font-medium">{item.label}</span>
+                )}
+              </Link>
+            </li>
+          );
+        })}
+      </ul>
+    </nav>
+  );
+
   return (
-    <aside
-      className={`fixed left-0 top-0 z-40 h-screen bg-gray-900 text-white transition-all duration-300 ${
-        sidebarCollapsed ? "w-16" : "w-64"
-      }`}
-    >
-      {/* Logo */}
-      <div className="flex h-16 items-center justify-between border-b border-gray-800 px-4">
-        <div
-          className={`${sidebarCollapsed ? "p-1.5" : "px-2 py-1.5"} rounded-lg bg-white`}
-        >
-          <img
-            src="/logo.png"
-            alt="Prem Industries India Limited"
-            className={`${sidebarCollapsed ? "h-8 w-8 object-contain" : "h-10 w-auto max-w-[190px] object-contain"}`}
-          />
-        </div>
+    <>
+      {mobileSidebarOpen && (
         <button
-          onClick={() => dispatch(toggleSidebar())}
-          className="rounded-lg p-1.5 text-gray-300 hover:bg-gray-800 transition-colors"
-        >
-          {sidebarCollapsed ? (
-            <ChevronRight className="h-5 w-5" />
-          ) : (
-            <ChevronLeft className="h-5 w-5" />
-          )}
-        </button>
-      </div>
+          type="button"
+          aria-label="Close sidebar overlay"
+          onClick={handleMobileClose}
+          className="fixed inset-0 z-40 bg-black/50 md:hidden"
+        />
+      )}
 
-      {/* Navigation */}
-      <nav className="mt-4 px-2">
-        <ul className="space-y-1">
-          {menuItems.map((item) => {
-            const Icon = item.icon;
-            const active = isActive(item);
-
-            return (
-              <li key={item.path}>
-                <Link
-                  to={item.path}
-                  className={`flex items-center gap-3 rounded-lg px-3 py-2.5 transition-colors ${
-                    active
-                      ? "bg-blue-600 text-white"
-                      : "text-gray-300 hover:bg-gray-800 hover:text-white"
-                  }`}
-                  title={sidebarCollapsed ? item.label : ""}
-                >
-                  <Icon className="h-5 w-5 flex-shrink-0" />
-                  {!sidebarCollapsed && (
-                    <span className="font-medium">{item.label}</span>
-                  )}
-                </Link>
-              </li>
-            );
-          })}
-        </ul>
-      </nav>
-
-      {/* Role Badge */}
-      {!sidebarCollapsed && (
-        <div className="absolute bottom-4 left-4 right-4">
-          <div
-            className={`rounded-lg px-3 py-2 text-center text-sm font-medium ${
-              role === "admin"
-                ? "bg-purple-900/50 text-purple-300"
-                : "bg-green-900/50 text-green-300"
-            }`}
-          >
-            {role === "admin" ? "Administrator" : "Marketing Team"}
+      <aside
+        className={`fixed left-0 top-0 z-50 h-screen w-64 bg-gray-900 text-white transition-transform duration-300 md:hidden ${
+          mobileSidebarOpen ? "translate-x-0" : "-translate-x-full"
+        }`}
+      >
+        <div className="flex h-16 items-center justify-between border-b border-gray-800 px-4">
+          <div className="rounded-lg bg-white px-2 py-1.5">
+            <img
+              src="/logo.png"
+              alt="Prem Industries India Limited"
+              className="h-10 w-auto max-w-[190px] object-contain"
+            />
           </div>
-          {role === "marketing" && (
+          <button
+            onClick={handleMobileClose}
+            className="rounded-lg p-1.5 text-gray-300 hover:bg-gray-800 transition-colors"
+          >
+            <ChevronLeft className="h-5 w-5" />
+          </button>
+        </div>
+
+        {renderNav(true)}
+      </aside>
+
+      <aside
+        className={`fixed left-0 top-0 z-40 hidden h-screen bg-gray-900 text-white transition-all duration-300 md:flex md:flex-col ${
+          sidebarCollapsed ? "w-16" : "w-64"
+        }`}
+      >
+        {/* Logo */}
+        <div className="flex h-16 items-center justify-between border-b border-gray-800 px-4">
+          <div
+            className={`${sidebarCollapsed ? "p-1.5" : "px-2 py-1.5"} rounded-lg bg-white`}
+          >
+            <img
+              src="/logo.png"
+              alt="Prem Industries India Limited"
+              className={`${sidebarCollapsed ? "h-8 w-8 object-contain" : "h-10 w-auto max-w-[190px] object-contain"}`}
+            />
+          </div>
+          <button
+            onClick={() => dispatch(toggleSidebar())}
+            className="rounded-lg p-1.5 text-gray-300 hover:bg-gray-800 transition-colors"
+          >
+            {sidebarCollapsed ? (
+              <ChevronRight className="h-5 w-5" />
+            ) : (
+              <ChevronLeft className="h-5 w-5" />
+            )}
+          </button>
+        </div>
+
+        {/* Navigation */}
+        {renderNav(false)}
+
+        {/* Role Badge */}
+        {!sidebarCollapsed && (
+          <div className="absolute bottom-4 left-4 right-4">
             <div
-              className={`mt-2 flex items-center justify-center gap-2 rounded-lg px-3 py-2 text-xs font-medium ${
-                isLiveOnline
-                  ? "bg-emerald-900/40 text-emerald-300"
-                  : "bg-gray-800 text-gray-300"
+              className={`rounded-lg px-3 py-2 text-center text-sm font-medium ${
+                role === "admin"
+                  ? "bg-purple-900/50 text-purple-300"
+                  : "bg-green-900/50 text-green-300"
               }`}
             >
-              <span
-                className={`h-2 w-2 rounded-full ${
-                  isLiveOnline ? "bg-emerald-400" : "bg-gray-400"
-                }`}
-              />
-              {isLiveOnline ? "Live: Online" : "Live: Offline"}
+              {role === "admin" ? "Administrator" : "Marketing Team"}
             </div>
-          )}
-        </div>
-      )}
-    </aside>
+            {role === "marketing" && (
+              <div
+                className={`mt-2 flex items-center justify-center gap-2 rounded-lg px-3 py-2 text-xs font-medium ${
+                  isLiveOnline
+                    ? "bg-emerald-900/40 text-emerald-300"
+                    : "bg-gray-800 text-gray-300"
+                }`}
+              >
+                <span
+                  className={`h-2 w-2 rounded-full ${
+                    isLiveOnline ? "bg-emerald-400" : "bg-gray-400"
+                  }`}
+                />
+                {isLiveOnline ? "Live: Online" : "Live: Offline"}
+              </div>
+            )}
+          </div>
+        )}
+      </aside>
+    </>
   );
 };
 

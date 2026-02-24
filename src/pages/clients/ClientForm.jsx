@@ -200,33 +200,40 @@ const ClientForm = ({ isAdmin = true, isEdit = false }) => {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       {/* Header */}
-      <div className="flex items-center gap-4">
-        <button
-          onClick={() => navigate(-1)}
-          className="rounded-lg p-2 hover:bg-gray-100 dark:hover:bg-gray-700"
-        >
-          <ArrowLeft className="h-5 w-5" />
-        </button>
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-            {isEdit ? "Edit Client" : "Add New Client"}
-          </h1>
-          <p className="text-gray-500 dark:text-gray-400">
-            {isEdit ? "Update client information" : "Fill in the details below"}
-          </p>
+      <div className="flex flex-col items-start gap-3 sm:gap-4">
+        <div className="flex w-full items-center gap-2 sm:gap-4 min-w-0">
+          <button
+            onClick={() => navigate(-1)}
+            className="flex-shrink-0 rounded-lg p-2 hover:bg-gray-100 dark:hover:bg-gray-700"
+          >
+            <ArrowLeft className="h-5 w-5" />
+          </button>
+          <div className="min-w-0">
+            <h1 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">
+              {isEdit ? "Edit Client" : "Add New Client"}
+            </h1>
+            <p className="text-xs sm:text-base text-gray-500 dark:text-gray-400">
+              {isEdit
+                ? "Update client information"
+                : "Fill in the details below"}
+            </p>
+          </div>
         </div>
       </div>
 
       {/* Form */}
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+      <form
+        onSubmit={handleSubmit(onSubmit)}
+        className="space-y-4 sm:space-y-6"
+      >
         {/* Basic Info */}
-        <div className="rounded-xl border border-gray-200 bg-white p-6 dark:border-gray-700 dark:bg-gray-800">
-          <h3 className="mb-4 text-lg font-semibold text-gray-900 dark:text-white">
+        <div className="rounded-lg sm:rounded-xl border border-gray-200 bg-white p-4 sm:p-6 dark:border-gray-700 dark:bg-gray-800">
+          <h3 className="mb-3 sm:mb-4 text-base sm:text-lg font-semibold text-gray-900 dark:text-white">
             Basic Information
           </h3>
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <div className="grid grid-cols-1 gap-3 sm:gap-4 sm:grid-cols-2">
             <Input
               label="Full Name"
               placeholder="John Doe"
@@ -256,11 +263,11 @@ const ClientForm = ({ isAdmin = true, isEdit = false }) => {
         </div>
 
         {/* Contact Info */}
-        <div className="rounded-xl border border-gray-200 bg-white p-6 dark:border-gray-700 dark:bg-gray-800">
-          <h3 className="mb-4 text-lg font-semibold text-gray-900 dark:text-white">
+        <div className="rounded-lg sm:rounded-xl border border-gray-200 bg-white p-4 sm:p-6 dark:border-gray-700 dark:bg-gray-800">
+          <h3 className="mb-3 sm:mb-4 text-base sm:text-lg font-semibold text-gray-900 dark:text-white">
             Contact Information
           </h3>
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <div className="grid grid-cols-1 gap-3 sm:gap-4 sm:grid-cols-2">
             <Input
               label="Email"
               type="email"
@@ -286,11 +293,11 @@ const ClientForm = ({ isAdmin = true, isEdit = false }) => {
         </div>
 
         {/* Address */}
-        <div className="rounded-xl border border-gray-200 bg-white p-6 dark:border-gray-700 dark:bg-gray-800">
-          <h3 className="mb-4 text-lg font-semibold text-gray-900 dark:text-white">
+        <div className="rounded-lg sm:rounded-xl border border-gray-200 bg-white p-4 sm:p-6 dark:border-gray-700 dark:bg-gray-800">
+          <h3 className="mb-3 sm:mb-4 text-base sm:text-lg font-semibold text-gray-900 dark:text-white">
             Address
           </h3>
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <div className="grid grid-cols-1 gap-3 sm:gap-4 sm:grid-cols-2">
             <div className="sm:col-span-2">
               <Input
                 label="Street Address"
@@ -321,11 +328,11 @@ const ClientForm = ({ isAdmin = true, isEdit = false }) => {
         </div>
 
         {/* CRM Info */}
-        <div className="rounded-xl border border-gray-200 bg-white p-6 dark:border-gray-700 dark:bg-gray-800">
-          <h3 className="mb-4 text-lg font-semibold text-gray-900 dark:text-white">
+        <div className="rounded-lg sm:rounded-xl border border-gray-200 bg-white p-4 sm:p-6 dark:border-gray-700 dark:bg-gray-800">
+          <h3 className="mb-3 sm:mb-4 text-base sm:text-lg font-semibold text-gray-900 dark:text-white">
             CRM Information
           </h3>
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid grid-cols-1 gap-3 sm:gap-4 sm:grid-cols-2 lg:grid-cols-3">
             <Select
               label="Event"
               options={activeEvents.map((e) => ({
@@ -375,8 +382,8 @@ const ClientForm = ({ isAdmin = true, isEdit = false }) => {
         </div>
 
         {/* Notes */}
-        <div className="rounded-xl border border-gray-200 bg-white p-6 dark:border-gray-700 dark:bg-gray-800">
-          <h3 className="mb-4 text-lg font-semibold text-gray-900 dark:text-white">
+        <div className="rounded-lg sm:rounded-xl border border-gray-200 bg-white p-4 sm:p-6 dark:border-gray-700 dark:bg-gray-800">
+          <h3 className="mb-3 sm:mb-4 text-base sm:text-lg font-semibold text-gray-900 dark:text-white">
             Additional Notes
           </h3>
           <Textarea
@@ -388,15 +395,20 @@ const ClientForm = ({ isAdmin = true, isEdit = false }) => {
         </div>
 
         {/* Actions */}
-        <div className="flex justify-end gap-3">
+        <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end sm:gap-3">
           <Button
             type="button"
             variant="outline"
             onClick={() => navigate(`${basePath}/clients`)}
+            className="w-full sm:w-auto text-sm"
           >
             Cancel
           </Button>
-          <Button type="submit" loading={isSubmitting}>
+          <Button
+            type="submit"
+            loading={isSubmitting}
+            className="w-full sm:w-auto text-sm"
+          >
             {isEdit ? "Update Client" : "Create Client"}
           </Button>
         </div>

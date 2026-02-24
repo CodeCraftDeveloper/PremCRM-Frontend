@@ -122,101 +122,113 @@ const ClientDetail = ({ isAdmin = true }) => {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex items-center gap-4">
-          <button
-            onClick={() => navigate(-1)}
-            className="rounded-lg p-2 hover:bg-gray-100 dark:hover:bg-gray-700"
-          >
-            <ArrowLeft className="h-5 w-5" />
-          </button>
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-              {client.name}
-            </h1>
-            <p className="text-gray-500 dark:text-gray-400">{client.companyName}</p>
+      <div className="flex flex-col gap-3 sm:gap-4">
+        <div className="flex flex-col items-start gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex w-full items-center gap-2 sm:gap-4 min-w-0">
+            <button
+              onClick={() => navigate(-1)}
+              className="flex-shrink-0 rounded-lg p-2 hover:bg-gray-100 dark:hover:bg-gray-700"
+            >
+              <ArrowLeft className="h-5 w-5" />
+            </button>
+            <div className="min-w-0">
+              <h1 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white truncate">
+                {client.name}
+              </h1>
+              <p className="text-sm sm:text-base text-gray-500 dark:text-gray-400 truncate">
+                {client.companyName}
+              </p>
+            </div>
           </div>
-        </div>
-        <div className="flex gap-3">
-          <Button
-            variant="outline"
-            icon={Image}
-            onClick={() => setUploadModalOpen(true)}
-          >
-            Upload Card
-          </Button>
-          <Link to={`${basePath}/clients/${id}/edit`}>
-            <Button icon={Edit}>Edit Client</Button>
-          </Link>
+          <div className="flex w-full gap-2 sm:w-auto">
+            <Button
+              variant="outline"
+              icon={Image}
+              onClick={() => setUploadModalOpen(true)}
+              className="flex-1 sm:flex-none text-sm"
+            >
+              <span className="hidden sm:inline">Upload Card</span>
+              <span className="sm:hidden">Card</span>
+            </Button>
+            <Link
+              to={`${basePath}/clients/${id}/edit`}
+              className="flex-1 sm:flex-none"
+            >
+              <Button icon={Edit} className="w-full sm:w-auto text-sm">
+                <span className="hidden sm:inline">Edit</span>
+                <span className="sm:hidden">✎</span>
+              </Button>
+            </Link>
+          </div>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+      <div className="grid grid-cols-1 gap-4 sm:gap-6 lg:grid-cols-3">
         {/* Main Info */}
-        <div className="lg:col-span-2 space-y-6">
+        <div className="lg:col-span-2 space-y-4 sm:space-y-6">
           {/* Contact Info */}
-          <div className="rounded-xl border border-gray-200 bg-white p-6 dark:border-gray-700 dark:bg-gray-800">
-            <h3 className="mb-4 text-lg font-semibold text-gray-900 dark:text-white">
+          <div className="rounded-lg sm:rounded-xl border border-gray-200 bg-white p-4 sm:p-6 dark:border-gray-700 dark:bg-gray-800">
+            <h3 className="mb-3 sm:mb-4 text-base sm:text-lg font-semibold text-gray-900 dark:text-white">
               Contact Information
             </h3>
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <div className="flex items-center gap-3">
-                <div className="rounded-lg bg-blue-100 p-2 dark:bg-blue-900/30">
-                  <Mail className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+            <div className="grid grid-cols-1 gap-3 sm:gap-4 sm:grid-cols-2">
+              <div className="flex items-start gap-2 sm:gap-3">
+                <div className="rounded-lg bg-blue-100 p-2 dark:bg-blue-900/30 flex-shrink-0">
+                  <Mail className="h-4 w-4 sm:h-5 sm:w-5 text-blue-600 dark:text-blue-400" />
                 </div>
-                <div>
-                  <p className="text-sm text-gray-500 dark:text-gray-400">
+                <div className="min-w-0">
+                  <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400">
                     Email
                   </p>
                   <a
                     href={`mailto:${client.email}`}
-                    className="text-blue-600 hover:underline"
+                    className="text-sm sm:text-base text-blue-600 hover:underline break-all"
                   >
                     {client.email}
                   </a>
                 </div>
               </div>
-              <div className="flex items-center gap-3">
-                <div className="rounded-lg bg-green-100 p-2 dark:bg-green-900/30">
-                  <Phone className="h-5 w-5 text-green-600 dark:text-green-400" />
+              <div className="flex items-start gap-2 sm:gap-3">
+                <div className="rounded-lg bg-green-100 p-2 dark:bg-green-900/30 flex-shrink-0">
+                  <Phone className="h-4 w-4 sm:h-5 sm:w-5 text-green-600 dark:text-green-400" />
                 </div>
-                <div>
-                  <p className="text-sm text-gray-500 dark:text-gray-400">
+                <div className="min-w-0">
+                  <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400">
                     Phone
                   </p>
                   <a
                     href={`tel:${client.phone}`}
-                    className="text-green-600 hover:underline"
+                    className="text-sm sm:text-base text-green-600 hover:underline"
                   >
                     {client.phone}
                   </a>
                 </div>
               </div>
               {client.alternatePhone && (
-                <div className="flex items-center gap-3">
-                  <div className="rounded-lg bg-green-100 p-2 dark:bg-green-900/30">
-                    <Phone className="h-5 w-5 text-green-600 dark:text-green-400" />
+                <div className="flex items-start gap-2 sm:gap-3">
+                  <div className="rounded-lg bg-green-100 p-2 dark:bg-green-900/30 flex-shrink-0">
+                    <Phone className="h-4 w-4 sm:h-5 sm:w-5 text-green-600 dark:text-green-400" />
                   </div>
-                  <div>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">
+                  <div className="min-w-0">
+                    <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400">
                       Alternate Phone
                     </p>
-                    <p className="text-gray-900 dark:text-white">
+                    <p className="text-sm sm:text-base text-gray-900 dark:text-white">
                       {client.alternatePhone}
                     </p>
                   </div>
                 </div>
               )}
               {client.address && (
-                <div className="flex items-center gap-3">
-                  <div className="rounded-lg bg-purple-100 p-2 dark:bg-purple-900/30">
-                    <MapPin className="h-5 w-5 text-purple-600 dark:text-purple-400" />
+                <div className="flex items-start gap-2 sm:gap-3">
+                  <div className="rounded-lg bg-purple-100 p-2 dark:bg-purple-900/30 flex-shrink-0">
+                    <MapPin className="h-4 w-4 sm:h-5 sm:w-5 text-purple-600 dark:text-purple-400" />
                   </div>
-                  <div>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">
+                  <div className="min-w-0">
+                    <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400">
                       Address
                     </p>
-                    <p className="text-gray-900 dark:text-white">
+                    <p className="text-sm sm:text-base text-gray-900 dark:text-white">
                       {[
                         client.address.street,
                         client.address.city,
@@ -232,15 +244,16 @@ const ClientDetail = ({ isAdmin = true }) => {
           </div>
 
           {/* Remarks Section */}
-          <div className="rounded-xl border border-gray-200 bg-white p-6 dark:border-gray-700 dark:bg-gray-800">
-            <div className="mb-4 flex items-center justify-between">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+          <div className="rounded-lg sm:rounded-xl border border-gray-200 bg-white p-4 sm:p-6 dark:border-gray-700 dark:bg-gray-800">
+            <div className="mb-3 sm:mb-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+              <h3 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white">
                 Remarks & Notes
               </h3>
               <Button
                 size="sm"
                 icon={Plus}
                 onClick={() => setRemarkModalOpen(true)}
+                className="text-sm"
               >
                 Add Remark
               </Button>
@@ -286,30 +299,30 @@ const ClientDetail = ({ isAdmin = true }) => {
         </div>
 
         {/* Sidebar */}
-        <div className="space-y-6">
+        <div className="space-y-4 sm:space-y-6">
           {/* Status Card */}
-          <div className="rounded-xl border border-gray-200 bg-white p-6 dark:border-gray-700 dark:bg-gray-800">
-            <h3 className="mb-4 text-lg font-semibold text-gray-900 dark:text-white">
+          <div className="rounded-lg sm:rounded-xl border border-gray-200 bg-white p-4 sm:p-6 dark:border-gray-700 dark:bg-gray-800">
+            <h3 className="mb-3 sm:mb-4 text-base sm:text-lg font-semibold text-gray-900 dark:text-white">
               Status
             </h3>
-            <div className="space-y-4">
+            <div className="space-y-3 sm:space-y-4">
               <div className="flex items-center justify-between">
-                <span className="text-sm text-gray-500 dark:text-gray-400">
+                <span className="text-xs sm:text-sm text-gray-500 dark:text-gray-400">
                   Follow-up Status
                 </span>
                 <StatusBadge status={client.followUpStatus} />
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-sm text-gray-500 dark:text-gray-400">
+                <span className="text-xs sm:text-sm text-gray-500 dark:text-gray-400">
                   Priority
                 </span>
                 <PriorityBadge priority={client.priority} />
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-sm text-gray-500 dark:text-gray-400">
+                <span className="text-xs sm:text-sm text-gray-500 dark:text-gray-400">
                   Next Follow-up
                 </span>
-                <span className="text-sm text-gray-900 dark:text-white">
+                <span className="text-xs sm:text-sm text-gray-900 dark:text-white">
                   {client.nextFollowUpDate
                     ? format(new Date(client.nextFollowUpDate), "MMM d, yyyy")
                     : "Not set"}
@@ -320,19 +333,19 @@ const ClientDetail = ({ isAdmin = true }) => {
 
           {/* Event Info */}
           {client.event && (
-            <div className="rounded-xl border border-gray-200 bg-white p-6 dark:border-gray-700 dark:bg-gray-800">
-              <h3 className="mb-4 text-lg font-semibold text-gray-900 dark:text-white">
+            <div className="rounded-lg sm:rounded-xl border border-gray-200 bg-white p-4 sm:p-6 dark:border-gray-700 dark:bg-gray-800">
+              <h3 className="mb-3 sm:mb-4 text-base sm:text-lg font-semibold text-gray-900 dark:text-white">
                 Event
               </h3>
-              <div className="flex items-center gap-3">
-                <div className="rounded-lg bg-purple-100 p-2 dark:bg-purple-900/30">
-                  <Calendar className="h-5 w-5 text-purple-600 dark:text-purple-400" />
+              <div className="flex items-center gap-2 sm:gap-3">
+                <div className="rounded-lg bg-purple-100 p-2 dark:bg-purple-900/30 flex-shrink-0">
+                  <Calendar className="h-4 w-4 sm:h-5 sm:w-5 text-purple-600 dark:text-purple-400" />
                 </div>
-                <div>
-                  <p className="font-medium text-gray-900 dark:text-white">
+                <div className="min-w-0">
+                  <p className="text-sm sm:text-base font-medium text-gray-900 dark:text-white truncate">
                     {client.event.name}
                   </p>
-                  <p className="text-sm text-gray-500 dark:text-gray-400">
+                  <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 truncate">
                     {client.event.location}
                   </p>
                 </div>
@@ -342,19 +355,19 @@ const ClientDetail = ({ isAdmin = true }) => {
 
           {/* Marketing Person */}
           {client.marketingPerson && (
-            <div className="rounded-xl border border-gray-200 bg-white p-6 dark:border-gray-700 dark:bg-gray-800">
-              <h3 className="mb-4 text-lg font-semibold text-gray-900 dark:text-white">
+            <div className="rounded-lg sm:rounded-xl border border-gray-200 bg-white p-4 sm:p-6 dark:border-gray-700 dark:bg-gray-800">
+              <h3 className="mb-3 sm:mb-4 text-base sm:text-lg font-semibold text-gray-900 dark:text-white">
                 Assigned To
               </h3>
-              <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-500 text-white">
+              <div className="flex items-center gap-2 sm:gap-3">
+                <div className="flex h-8 sm:h-10 w-8 sm:w-10 items-center justify-center rounded-full bg-blue-500 text-white flex-shrink-0 text-xs sm:text-sm">
                   {client.marketingPerson.name?.charAt(0).toUpperCase()}
                 </div>
-                <div>
-                  <p className="font-medium text-gray-900 dark:text-white">
+                <div className="min-w-0">
+                  <p className="text-sm sm:text-base font-medium text-gray-900 dark:text-white truncate">
                     {client.marketingPerson.name}
                   </p>
-                  <p className="text-sm text-gray-500 dark:text-gray-400">
+                  <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 truncate">
                     {client.marketingPerson.email}
                   </p>
                 </div>
@@ -364,8 +377,8 @@ const ClientDetail = ({ isAdmin = true }) => {
 
           {/* Visiting Card */}
           {client.visitingCard?.url && (
-            <div className="rounded-xl border border-gray-200 bg-white p-6 dark:border-gray-700 dark:bg-gray-800">
-              <h3 className="mb-4 text-lg font-semibold text-gray-900 dark:text-white">
+            <div className="rounded-lg sm:rounded-xl border border-gray-200 bg-white p-4 sm:p-6 dark:border-gray-700 dark:bg-gray-800">
+              <h3 className="mb-3 sm:mb-4 text-base sm:text-lg font-semibold text-gray-900 dark:text-white">
                 Visiting Card
               </h3>
               <a
@@ -377,18 +390,18 @@ const ClientDetail = ({ isAdmin = true }) => {
                 <img
                   src={client.visitingCardUrl || client.visitingCard.url}
                   alt="Visiting Card"
-                  className="h-56 w-full object-cover transition-transform hover:scale-105 sm:h-64"
+                  className="h-40 w-full object-cover transition-transform hover:scale-105 sm:h-48"
                 />
               </a>
             </div>
           )}
 
           {/* Additional Info */}
-          <div className="rounded-xl border border-gray-200 bg-white p-6 dark:border-gray-700 dark:bg-gray-800">
-            <h3 className="mb-4 text-lg font-semibold text-gray-900 dark:text-white">
+          <div className="rounded-lg sm:rounded-xl border border-gray-200 bg-white p-4 sm:p-6 dark:border-gray-700 dark:bg-gray-800">
+            <h3 className="mb-3 sm:mb-4 text-base sm:text-lg font-semibold text-gray-900 dark:text-white">
               Additional Info
             </h3>
-            <div className="space-y-3">
+            <div className="space-y-2 sm:space-y-3">
               {client.industry && (
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-gray-500 dark:text-gray-400">

@@ -48,20 +48,20 @@ const Pagination = ({
   if (totalPages <= 1) return null;
 
   return (
-    <div className="flex flex-col items-center justify-between gap-4 sm:flex-row">
-      <p className="text-sm text-gray-600 dark:text-gray-400">
+    <div className="flex flex-col items-center justify-between gap-3 sm:gap-4 sm:flex-row">
+      <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">
         Showing <span className="font-medium">{startItem}</span> to{" "}
         <span className="font-medium">{endItem}</span> of{" "}
         <span className="font-medium">{totalItems}</span> results
       </p>
 
-      <div className="flex items-center gap-1">
+      <div className="flex items-center gap-0.5 sm:gap-1">
         <button
           onClick={() => onPageChange(currentPage - 1)}
           disabled={currentPage === 1}
-          className="rounded-lg p-2 hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-50 dark:hover:bg-gray-700"
+          className="rounded-lg p-1.5 sm:p-2 hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-50 dark:hover:bg-gray-700"
         >
-          <ChevronLeft className="h-5 w-5" />
+          <ChevronLeft className="h-4 w-4 sm:h-5 sm:w-5" />
         </button>
 
         {getPageNumbers().map((page, index) => (
@@ -69,7 +69,7 @@ const Pagination = ({
             key={index}
             onClick={() => typeof page === "number" && onPageChange(page)}
             disabled={page === "..."}
-            className={`min-w-[40px] rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
+            className={`min-w-[32px] sm:min-w-[40px] rounded-lg px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm font-medium transition-colors ${
               page === currentPage
                 ? "bg-blue-600 text-white"
                 : page === "..."
@@ -84,9 +84,9 @@ const Pagination = ({
         <button
           onClick={() => onPageChange(currentPage + 1)}
           disabled={currentPage === totalPages}
-          className="rounded-lg p-2 hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-50 dark:hover:bg-gray-700"
+          className="rounded-lg p-1.5 sm:p-2 hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-50 dark:hover:bg-gray-700"
         >
-          <ChevronRight className="h-5 w-5" />
+          <ChevronRight className="h-4 w-4 sm:h-5 sm:w-5" />
         </button>
       </div>
     </div>

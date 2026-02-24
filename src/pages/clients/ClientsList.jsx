@@ -1,13 +1,7 @@
 import { useEffect, useState, useMemo } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { Link } from "react-router-dom";
-import {
-  Plus,
-  Filter,
-  Eye,
-  Edit,
-  Trash2,
-} from "lucide-react";
+import { Plus, Filter, Eye, Edit, Trash2 } from "lucide-react";
 import {
   fetchClients,
   deleteClient,
@@ -125,43 +119,46 @@ const ClientsList = ({ isAdmin = true }) => {
   const basePath = isAdmin ? "/admin" : "/marketing";
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       {/* Header */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+      <div className="flex flex-col gap-3 sm:gap-4">
+        <div className="flex flex-col gap-2 sm:gap-0">
+          <h1 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">
             {isAdmin ? "All Clients" : "My Clients"}
           </h1>
-          <p className="text-gray-500 dark:text-gray-400">
+          <p className="text-sm sm:text-base text-gray-500 dark:text-gray-400">
             {pagination.total} clients found
           </p>
         </div>
-        <div className="flex gap-3">
+        <div className="flex flex-col-reverse gap-2 sm:flex-row sm:gap-3">
           <Button
             variant="outline"
             icon={Filter}
             onClick={() => setShowFilters(!showFilters)}
+            className="text-sm w-full sm:w-auto"
           >
             Filters
           </Button>
-          <Link to={`${basePath}/clients/new`}>
-            <Button icon={Plus}>Add Client</Button>
+          <Link to={`${basePath}/clients/new`} className="w-full sm:w-auto">
+            <Button icon={Plus} className="w-full text-sm">
+              Add Client
+            </Button>
           </Link>
         </div>
       </div>
 
       {/* Search and Filters */}
-      <div className="space-y-4">
+      <div className="space-y-3 sm:space-y-4">
         <SearchInput
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder="Search clients by name, company, email..."
-          className="max-w-md"
+          className="w-full max-w-full sm:max-w-md"
         />
 
         {showFilters && (
-          <div className="rounded-xl border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-800">
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="rounded-lg sm:rounded-xl border border-gray-200 bg-white p-3 sm:p-4 dark:border-gray-700 dark:bg-gray-800">
+            <div className="grid grid-cols-1 gap-3 sm:gap-4 sm:grid-cols-2 lg:grid-cols-4">
               <Select
                 label="Event"
                 options={eventOptions}
@@ -197,8 +194,12 @@ const ClientsList = ({ isAdmin = true }) => {
                 placeholder="All Priorities"
               />
             </div>
-            <div className="mt-4 flex justify-end">
-              <Button variant="ghost" onClick={handleClearFilters}>
+            <div className="mt-3 sm:mt-4 flex justify-end">
+              <Button
+                variant="ghost"
+                onClick={handleClearFilters}
+                className="text-sm"
+              >
                 Clear Filters
               </Button>
             </div>
@@ -206,7 +207,7 @@ const ClientsList = ({ isAdmin = true }) => {
         )}
       </div>
 
-      {/* Clients Table */}
+      {/* Clients Table/List */}
       {isLoading ? (
         <div className="flex h-64 items-center justify-center">
           <LoadingSpinner text="Loading clients..." />
@@ -222,35 +223,35 @@ const ClientsList = ({ isAdmin = true }) => {
           }
         />
       ) : (
-        <div className="overflow-x-auto rounded-xl border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800">
-          <table className="w-full">
+        <div className="overflow-x-auto rounded-lg sm:rounded-xl border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800">
+          <table className="w-full text-sm">
             <thead className="border-b border-gray-200 bg-gray-50 dark:border-gray-700 dark:bg-gray-800/50">
               <tr>
-                <th className="px-4 py-3 text-left text-sm font-medium text-gray-500 dark:text-gray-400">
+                <th className="px-3 py-2 sm:px-4 sm:py-3 text-left text-xs sm:text-sm font-medium text-gray-500 dark:text-gray-400">
                   Client
                 </th>
-                <th className="px-4 py-3 text-left text-sm font-medium text-gray-500 dark:text-gray-400">
+                <th className="hidden sm:table-cell px-3 sm:px-4 py-2 sm:py-3 text-left text-xs sm:text-sm font-medium text-gray-500 dark:text-gray-400">
                   Contact
                 </th>
-                <th className="px-4 py-3 text-left text-sm font-medium text-gray-500 dark:text-gray-400">
+                <th className="hidden md:table-cell px-3 sm:px-4 py-2 sm:py-3 text-left text-xs sm:text-sm font-medium text-gray-500 dark:text-gray-400">
                   Event
                 </th>
-                <th className="px-4 py-3 text-left text-sm font-medium text-gray-500 dark:text-gray-400">
+                <th className="hidden lg:table-cell px-3 sm:px-4 py-2 sm:py-3 text-left text-xs sm:text-sm font-medium text-gray-500 dark:text-gray-400">
                   Status
                 </th>
-                <th className="px-4 py-3 text-left text-sm font-medium text-gray-500 dark:text-gray-400">
+                <th className="hidden lg:table-cell px-3 sm:px-4 py-2 sm:py-3 text-left text-xs sm:text-sm font-medium text-gray-500 dark:text-gray-400">
                   Priority
                 </th>
-                <th className="px-4 py-3 text-left text-sm font-medium text-gray-500 dark:text-gray-400">
+                <th className="hidden xl:table-cell px-3 sm:px-4 py-2 sm:py-3 text-left text-xs sm:text-sm font-medium text-gray-500 dark:text-gray-400">
                   Next Follow-up
                 </th>
-                <th className="px-4 py-3 text-left text-sm font-medium text-gray-500 dark:text-gray-400">
+                <th className="hidden 2xl:table-cell px-3 sm:px-4 py-2 sm:py-3 text-left text-xs sm:text-sm font-medium text-gray-500 dark:text-gray-400">
                   Registered By
                 </th>
-                <th className="px-4 py-3 text-left text-sm font-medium text-gray-500 dark:text-gray-400">
+                <th className="hidden sm:table-cell px-3 sm:px-4 py-2 sm:py-3 text-left text-xs sm:text-sm font-medium text-gray-500 dark:text-gray-400">
                   Last Contacted By
                 </th>
-                <th className="px-4 py-3 text-right text-sm font-medium text-gray-500 dark:text-gray-400">
+                <th className="px-3 py-2 sm:px-4 sm:py-3 text-right text-xs sm:text-sm font-medium text-gray-500 dark:text-gray-400">
                   Actions
                 </th>
               </tr>
@@ -261,14 +262,108 @@ const ClientsList = ({ isAdmin = true }) => {
                   key={client._id}
                   className="hover:bg-gray-50 dark:hover:bg-gray-800/50"
                 >
-                  <td className="px-4 py-3">
+                  <td className="px-3 py-2 sm:px-4 sm:py-3">
                     <div>
-                      <p className="font-medium text-gray-900 dark:text-white">
+                      <p className="text-xs sm:text-sm font-medium text-gray-900 dark:text-white truncate">
                         {client.name}
                       </p>
-                      <p className="text-sm text-gray-500 dark:text-gray-400">
+                      <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
                         {client.companyName}
                       </p>
+                    </div>
+                  </td>
+                  <td className="hidden sm:table-cell px-3 sm:px-4 py-2 sm:py-3">
+                    <div>
+                      <p className="text-xs sm:text-sm text-gray-900 dark:text-white truncate">
+                        {client.email}
+                      </p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
+                        {client.phone}
+                      </p>
+                    </div>
+                  </td>
+                  <td className="hidden md:table-cell px-3 sm:px-4 py-2 sm:py-3">
+                    <p className="text-xs sm:text-sm text-gray-900 dark:text-white truncate">
+                      {client.event?.name || "-"}
+                    </p>
+                  </td>
+                  <td className="hidden lg:table-cell px-3 sm:px-4 py-2 sm:py-3">
+                    <StatusBadge status={client.followUpStatus} />
+                  </td>
+                  <td className="hidden lg:table-cell px-3 sm:px-4 py-2 sm:py-3">
+                    <PriorityBadge priority={client.priority} />
+                  </td>
+                  <td className="hidden xl:table-cell px-3 sm:px-4 py-2 sm:py-3">
+                    <p className="text-xs sm:text-sm text-gray-900 dark:text-white">
+                      {client.nextFollowUpDate
+                        ? format(
+                            new Date(client.nextFollowUpDate),
+                            "MMM d, yyyy",
+                          )
+                        : "-"}
+                    </p>
+                  </td>
+                  <td className="hidden 2xl:table-cell px-3 sm:px-4 py-2 sm:py-3">
+                    <div>
+                      <p className="text-xs sm:text-sm text-gray-900 dark:text-white truncate">
+                        {client.createdBy?.name ||
+                          client.marketingPerson?.name ||
+                          "-"}
+                      </p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
+                        {client.createdBy?.email ||
+                          client.marketingPerson?.email ||
+                          ""}
+                      </p>
+                    </div>
+                  </td>
+                  <td className="hidden sm:table-cell px-3 sm:px-4 py-2 sm:py-3">
+                    <div>
+                      <p className="text-xs sm:text-sm text-gray-900 dark:text-white truncate">
+                        {client.lastContactedBy?.name || "-"}
+                      </p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
+                        {client.lastContactedDate
+                          ? format(new Date(client.lastContactedDate), "MMM d")
+                          : ""}
+                      </p>
+                    </div>
+                  </td>
+                  <td className="px-3 py-2 sm:px-4 sm:py-3">
+                    <div className="flex items-center justify-end gap-1 sm:gap-2">
+                      <Link to={`${basePath}/clients/${client._id}`}>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          icon={Eye}
+                          title="View"
+                        >
+                          <span className="hidden sm:inline">View</span>
+                        </Button>
+                      </Link>
+                      <Link to={`${basePath}/clients/${client._id}/edit`}>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          icon={Edit}
+                          title="Edit"
+                        >
+                          <span className="hidden sm:inline">Edit</span>
+                        </Button>
+                      </Link>
+                      {(isAdmin ||
+                        client.marketingPerson?._id === user?._id) && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          icon={Trash2}
+                          onClick={() => handleDeleteClick(client)}
+                          className="text-red-600 hover:text-red-700"
+                          title="Delete"
+                        >
+                          <span className="hidden sm:inline">Delete</span>
+                        </Button>
+                      )}
                     </div>
                   </td>
                   <td className="px-4 py-3">
@@ -305,10 +400,14 @@ const ClientsList = ({ isAdmin = true }) => {
                   <td className="px-4 py-3">
                     <div>
                       <p className="text-sm text-gray-900 dark:text-white">
-                        {client.createdBy?.name || client.marketingPerson?.name || "-"}
+                        {client.createdBy?.name ||
+                          client.marketingPerson?.name ||
+                          "-"}
                       </p>
                       <p className="text-xs text-gray-500 dark:text-gray-400">
-                        {client.createdBy?.email || client.marketingPerson?.email || ""}
+                        {client.createdBy?.email ||
+                          client.marketingPerson?.email ||
+                          ""}
                       </p>
                     </div>
                   </td>
@@ -319,7 +418,10 @@ const ClientsList = ({ isAdmin = true }) => {
                       </p>
                       <p className="text-xs text-gray-500 dark:text-gray-400">
                         {client.lastContactedDate
-                          ? format(new Date(client.lastContactedDate), "MMM d, yyyy h:mm a")
+                          ? format(
+                              new Date(client.lastContactedDate),
+                              "MMM d, yyyy h:mm a",
+                            )
                           : ""}
                       </p>
                     </div>

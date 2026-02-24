@@ -3,7 +3,11 @@ import { useNavigate } from "react-router-dom";
 import { Bell, LogOut, User, Menu, Moon, Sun, ChevronDown } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
 import { logout } from "../../store/slices/authSlice";
-import { toggleTheme, toggleSidebar } from "../../store/slices/uiSlice";
+import {
+  toggleTheme,
+  toggleSidebar,
+  toggleMobileSidebar,
+} from "../../store/slices/uiSlice";
 
 const Header = () => {
   const dispatch = useDispatch();
@@ -37,23 +41,31 @@ const Header = () => {
     navigate(profilePath);
   };
 
+  const handleMenuClick = () => {
+    if (window.innerWidth < 768) {
+      dispatch(toggleMobileSidebar());
+      return;
+    }
+    dispatch(toggleSidebar());
+  };
+
   return (
-    <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-gray-200 bg-white px-4 dark:border-gray-700 dark:bg-gray-800">
+    <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-gray-200 bg-white px-3 sm:px-4 dark:border-gray-700 dark:bg-gray-800">
       {/* Left side */}
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-2 md:gap-4 min-w-0">
         <button
-          onClick={() => dispatch(toggleSidebar())}
-          className="rounded-lg p-2 hover:bg-gray-100 lg:hidden dark:hover:bg-gray-700"
+          onClick={handleMenuClick}
+          className="rounded-lg p-2 hover:bg-gray-100 md:hidden dark:hover:bg-gray-700"
         >
           <Menu className="h-5 w-5 text-gray-600 dark:text-gray-300" />
         </button>
-        <h1 className="text-lg font-semibold text-gray-800 dark:text-white">
+        <h1 className="text-sm md:text-lg font-semibold text-gray-800 dark:text-white truncate">
           {user?.role === "admin" ? "Admin Panel" : "Marketing Dashboard"}
         </h1>
       </div>
 
       {/* Right side */}
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-1 md:gap-3">
         {/* Theme Toggle */}
         <button
           onClick={() => dispatch(toggleTheme())}
@@ -79,11 +91,11 @@ const Header = () => {
             onClick={() => setShowDropdown(!showDropdown)}
             className="flex items-center gap-2 rounded-lg p-2 hover:bg-gray-100 dark:hover:bg-gray-700"
           >
-            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-blue-500 text-white">
+            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-blue-500 text-white text-xs md:text-sm flex-shrink-0">
               {user?.name?.charAt(0).toUpperCase() || "U"}
             </div>
             <div className="hidden text-left md:block">
-              <p className="text-sm font-medium text-gray-700 dark:text-gray-200">
+              <p className="text-sm font-medium text-gray-700 dark:text-gray-200 truncate">
                 {user?.name || "User"}
               </p>
               <p className="text-xs text-gray-500 dark:text-gray-400 capitalize">

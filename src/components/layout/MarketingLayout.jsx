@@ -10,8 +10,8 @@ const MarketingLayout = () => {
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       <Sidebar role="marketing" />
       <div
-        className={`transition-all duration-300 ${
-          sidebarCollapsed ? "ml-16" : "ml-64"
+        className={`ml-0 transition-all duration-300 ${
+          sidebarCollapsed ? "lg:ml-16" : "lg:ml-64"
         }`}
       >
         <Header />
