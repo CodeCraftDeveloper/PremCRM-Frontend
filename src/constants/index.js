@@ -28,7 +28,7 @@ export const MARKETING_REVIEWERS = [
   "BHagat Sharma",
   "Deepak Dua",
   "Devendar Singh",
-  "Gautam",
+  "Gautam Sir",
   "Harish",
   "Rajeev Bakshi",
   "Sonu Kaushik",
