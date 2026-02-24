@@ -39,15 +39,40 @@ const MarketingDashboard = () => {
   const { user } = useSelector((state) => state.auth);
   const token = localStorage.getItem("accessToken");
   const refreshTimerRef = useRef(null);
+  const initializedRef = useRef(false);
+  const dashboardInFlightRef = useRef(false);
+  const performanceInFlightRef = useRef(false);
+  const lastDashboardFetchAtRef = useRef(0);
+  const lastPerformanceFetchAtRef = useRef(0);
   const [myPerformance, setMyPerformance] = useState(null);
   const [nowTick, setNowTick] = useState(Date.now());
+  const MIN_FETCH_INTERVAL_MS = 3000;
 
-  const fetchLatestDashboard = useCallback(() => {
-    dispatch(fetchMarketingDashboard());
+  const fetchLatestDashboard = useCallback(async (force = false) => {
+    const now = Date.now();
+    if (!force && now - lastDashboardFetchAtRef.current < MIN_FETCH_INTERVAL_MS) {
+      return;
+    }
+    if (dashboardInFlightRef.current) return;
+
+    dashboardInFlightRef.current = true;
+    try {
+      await dispatch(fetchMarketingDashboard());
+      lastDashboardFetchAtRef.current = Date.now();
+    } finally {
+      dashboardInFlightRef.current = false;
+    }
   }, [dispatch]);
 
-  const fetchMyPerformance = useCallback(async () => {
+  const fetchMyPerformance = useCallback(async (force = false) => {
     if (!token) return;
+    const now = Date.now();
+    if (!force && now - lastPerformanceFetchAtRef.current < MIN_FETCH_INTERVAL_MS) {
+      return;
+    }
+    if (performanceInFlightRef.current) return;
+
+    performanceInFlightRef.current = true;
     try {
       const response = await fetch(
         `${(import.meta.env.VITE_API_URL || "http://localhost:5000/api").replace(/\/$/, "")}/sessions/marketing/my-performance`,
@@ -64,9 +89,12 @@ const MarketingDashboard = () => {
           ...data.data,
           _receivedAt: Date.now(),
         });
+        lastPerformanceFetchAtRef.current = Date.now();
       }
     } catch {
       // Keep dashboard usable even if performance endpoint fails.
+    } finally {
+      performanceInFlightRef.current = false;
     }
   }, [token]);
 
@@ -76,12 +104,14 @@ const MarketingDashboard = () => {
       refreshTimerRef.current = null;
       fetchLatestDashboard();
       fetchMyPerformance();
-    }, 500);
+    }, 1200);
   }, [fetchLatestDashboard, fetchMyPerformance]);
 
   useEffect(() => {
-    fetchLatestDashboard();
-    fetchMyPerformance();
+    if (initializedRef.current) return;
+    initializedRef.current = true;
+    fetchLatestDashboard(true);
+    fetchMyPerformance(true);
   }, [fetchLatestDashboard, fetchMyPerformance]);
 
   useEffect(() => {
@@ -99,16 +129,10 @@ const MarketingDashboard = () => {
       queueDashboardRefresh();
     };
 
-    const handleActivityUpdate = () => {
-      queueDashboardRefresh();
-    };
-
     socket.on("dashboard:refresh", handleDashboardRefresh);
-    socket.on("activity:new", handleActivityUpdate);
 
     return () => {
       socket.off("dashboard:refresh", handleDashboardRefresh);
-      socket.off("activity:new", handleActivityUpdate);
       if (refreshTimerRef.current) {
         clearTimeout(refreshTimerRef.current);
         refreshTimerRef.current = null;
@@ -288,12 +312,12 @@ const MarketingDashboard = () => {
       </div>
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-        <div className="rounded-xl border border-gray-200 bg-white p-6 dark:border-gray-700 dark:bg-gray-800">
+        <div className="min-w-0 rounded-xl border border-gray-200 bg-white p-6 dark:border-gray-700 dark:bg-gray-800">
           <h3 className="mb-4 text-lg font-semibold text-gray-900 dark:text-white">
             Client Status Distribution
           </h3>
-          <div className="h-48">
-            <ResponsiveContainer width="100%" height="100%">
+          <div className="h-48 min-h-[192px] min-w-0">
+            <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={180}>
               <PieChart>
                 <Pie
                   data={statusChartData}
