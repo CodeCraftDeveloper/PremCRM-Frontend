@@ -377,7 +377,7 @@ const ClientDetail = ({ isAdmin = true }) => {
                 <img
                   src={client.visitingCardUrl || client.visitingCard.url}
                   alt="Visiting Card"
-                  className="h-32 w-full object-cover transition-transform hover:scale-105"
+                  className="h-56 w-full object-cover transition-transform hover:scale-105 sm:h-64"
                 />
               </a>
             </div>
