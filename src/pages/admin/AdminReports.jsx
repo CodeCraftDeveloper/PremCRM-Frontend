@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
-import { useAuth } from "../../context/AuthContext";
+import { useAuth } from "../../hooks";
 import { Header, LoadingSpinner } from "../../components";
 import { getTickets } from "../../services/googleSheets";
 import { calculateTicketStats, parseSheetOptions } from "../../utils/helpers";

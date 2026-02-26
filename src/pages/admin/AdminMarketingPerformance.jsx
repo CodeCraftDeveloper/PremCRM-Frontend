@@ -5,13 +5,11 @@ import api from "../../services/api";
 import { connectSocket } from "../../services/socket";
 
 export default function AdminMarketingPerformance() {
-  const token = localStorage.getItem("accessToken");
   const [marketingUsers, setMarketingUsers] = useState([]);
   const [performanceData, setPerformanceData] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
   const [activeTab, setActiveTab] = useState("status"); // status or performance
-  const [selectedUser, setSelectedUser] = useState(null);
   const [userReport, setUserReport] = useState(null);
   const [nowTick, setNowTick] = useState(Date.now());
   const performanceRefreshTimerRef = useRef(null);
@@ -37,14 +35,7 @@ export default function AdminMarketingPerformance() {
         setIsLoading(true);
         setError("");
 
-        const response = await api.get(
-          "/sessions/marketing/status",
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          },
-        );
+        const response = await api.get("/sessions/marketing/status");
 
         if (response.data.success) {
           setMarketingUsers((response.data.data || []).map(withReceivedAt));
@@ -59,10 +50,8 @@ export default function AdminMarketingPerformance() {
       }
     };
 
-    if (token) {
-      fetchMarketingUsersStatus();
-    }
-  }, [token]);
+    fetchMarketingUsersStatus();
+  }, []);
 
   // Live ticker to update durations every second without refresh.
   useEffect(() => {
@@ -70,10 +59,29 @@ export default function AdminMarketingPerformance() {
     return () => clearInterval(id);
   }, []);
 
-  useEffect(() => {
-    if (!token) return;
+  const fetchPerformanceData = useCallback(async (showLoader = false) => {
+    try {
+      if (showLoader) {
+        setIsLoading(true);
+      }
+      const response = await api.get("/sessions/marketing/performance");
 
-    const socket = connectSocket(token);
+      if (response.data.success) {
+        setPerformanceData(response.data.data);
+      }
+    } catch (err) {
+      setError(
+        err.response?.data?.message || "Failed to fetch performance data",
+      );
+    } finally {
+      if (showLoader) {
+        setIsLoading(false);
+      }
+    }
+  }, []);
+
+  useEffect(() => {
+    const socket = connectSocket();
     if (!socket) return;
 
     const handleSnapshot = (statuses) => {
@@ -124,51 +132,16 @@ export default function AdminMarketingPerformance() {
         performanceRefreshTimerRef.current = null;
       }
     };
-  }, [activeTab, token]);
-
-  const fetchPerformanceData = useCallback(async (showLoader = false) => {
-    try {
-      if (showLoader) {
-        setIsLoading(true);
-      }
-      const response = await api.get(
-        "/sessions/marketing/performance",
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        },
-      );
-
-      if (response.data.success) {
-        setPerformanceData(response.data.data);
-      }
-    } catch (err) {
-      setError(
-        err.response?.data?.message || "Failed to fetch performance data",
-      );
-    } finally {
-      if (showLoader) {
-        setIsLoading(false);
-      }
-    }
-  }, [token]);
+  }, [activeTab, fetchPerformanceData]);
 
   const fetchUserReport = async (userId) => {
     try {
-      const response = await api.get(
-        `/sessions/marketing/${userId}/report`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-          params: { days: 30 },
-        },
-      );
+      const response = await api.get(`/sessions/marketing/${userId}/report`, {
+        params: { days: 30 },
+      });
 
       if (response.data.success) {
         setUserReport(response.data.data);
-        setSelectedUser(userId);
       }
     } catch (err) {
       setError(err.response?.data?.message || "Failed to fetch user report");
@@ -486,7 +459,6 @@ export default function AdminMarketingPerformance() {
                 <button
                   onClick={() => {
                     setUserReport(null);
-                    setSelectedUser(null);
                   }}
                   className="text-gray-500 hover:text-gray-700 text-2xl"
                 >

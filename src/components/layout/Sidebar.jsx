@@ -12,6 +12,9 @@ import {
   ChevronRight,
   Building2,
   TrendingUp,
+  Target,
+  Globe,
+  FileSpreadsheet,
 } from "lucide-react";
 import {
   toggleSidebar,
@@ -22,14 +25,21 @@ import { connectSocket, getSocket } from "../../services/socket";
 const Sidebar = ({ role = "admin" }) => {
   const dispatch = useDispatch();
   const location = useLocation();
-  const { sidebarCollapsed, mobileSidebarOpen } = useSelector((state) => state.ui);
-  const [isLiveOnline, setIsLiveOnline] = useState(false);
+  const { sidebarCollapsed, mobileSidebarOpen } = useSelector(
+    (state) => state.ui,
+  );
+  const [isLiveOnline, setIsLiveOnline] = useState(() =>
+    Boolean(getSocket()?.connected),
+  );
 
   const adminMenuItems = [
     { path: "/admin", icon: LayoutDashboard, label: "Dashboard", exact: true },
     { path: "/admin/users", icon: Users, label: "Users" },
     { path: "/admin/events", icon: Calendar, label: "Events" },
     { path: "/admin/clients", icon: Briefcase, label: "Clients" },
+    { path: "/admin/leads", icon: Target, label: "Leads" },
+    { path: "/admin/queries", icon: FileSpreadsheet, label: "Queries" },
+    { path: "/admin/websites", icon: Globe, label: "Websites" },
     {
       path: "/admin/marketing/performance",
       icon: TrendingUp,
@@ -47,6 +57,8 @@ const Sidebar = ({ role = "admin" }) => {
       exact: true,
     },
     { path: "/marketing/clients", icon: Briefcase, label: "My Clients" },
+    { path: "/marketing/leads", icon: Target, label: "My Leads" },
+    { path: "/marketing/queries", icon: FileSpreadsheet, label: "Queries" },
     { path: "/marketing/events", icon: Calendar, label: "Events" },
     { path: "/marketing/settings", icon: Building2, label: "Settings" },
   ];
@@ -62,14 +74,8 @@ const Sidebar = ({ role = "admin" }) => {
 
   useEffect(() => {
     if (role !== "marketing") return undefined;
-
-    const token = localStorage.getItem("accessToken");
-    if (!token) return undefined;
-
-    const socket = getSocket() || connectSocket(token);
+    const socket = getSocket() || connectSocket();
     if (!socket) return undefined;
-
-    setIsLiveOnline(Boolean(socket.connected));
 
     const handleConnect = () => setIsLiveOnline(true);
     const handleDisconnect = () => setIsLiveOnline(false);

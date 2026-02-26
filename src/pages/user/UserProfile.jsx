@@ -1,16 +1,11 @@
-import { useAuth } from "../../context/AuthContext";
+import { useAuth } from "../../hooks";
 import { Header } from "../../components";
 import { getInitials } from "../../utils/helpers";
-import { parseSheetOptions } from "../../utils/helpers";
-import { useMemo } from "react";
 
 export default function UserProfile() {
-  const { userName, userEmail, selectedSheet, setSelectedSheet } = useAuth();
-
-  const sheetOptions = useMemo(
-    () => parseSheetOptions(import.meta.env.VITE_SHEET_OPTIONS ?? ""),
-    [],
-  );
+  const { user } = useAuth();
+  const userName = user?.name || "User";
+  const userEmail = user?.email || "";
 
   return (
     <div className="profile-page">
@@ -29,7 +24,8 @@ export default function UserProfile() {
           <div className="settings-card">
             <h3>Settings</h3>
 
-            <div className="setting-item">
+            {/* TODO: Implement sheet selection with Redux or local state */}
+            {/* <div className="setting-item">
               <div className="setting-label">
                 <strong>Event / Sheet</strong>
                 <p>Select which event's data you want to view</p>
@@ -44,7 +40,7 @@ export default function UserProfile() {
                   </option>
                 ))}
               </select>
-            </div>
+            </div> */}
 
             <div className="setting-item">
               <div className="setting-label">

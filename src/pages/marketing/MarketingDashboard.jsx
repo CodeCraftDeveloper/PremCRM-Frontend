@@ -14,6 +14,7 @@ import { fetchMarketingDashboard } from "../../store/slices/dashboardSlice";
 import { StatCard, LoadingSpinner, StatusBadge } from "../../components/ui";
 import { format } from "date-fns";
 import { connectSocket } from "../../services/socket";
+import api from "../../services/api";
 
 const COLORS = [
   "#3B82F6",
@@ -37,7 +38,6 @@ const MarketingDashboard = () => {
   const dispatch = useDispatch();
   const { marketingStats, isLoading } = useSelector((state) => state.dashboard);
   const { user } = useSelector((state) => state.auth);
-  const token = localStorage.getItem("accessToken");
   const refreshTimerRef = useRef(null);
   const initializedRef = useRef(false);
   const dashboardInFlightRef = useRef(false);
@@ -65,7 +65,6 @@ const MarketingDashboard = () => {
   }, [dispatch]);
 
   const fetchMyPerformance = useCallback(async (force = false) => {
-    if (!token) return;
     const now = Date.now();
     if (!force && now - lastPerformanceFetchAtRef.current < MIN_FETCH_INTERVAL_MS) {
       return;
@@ -74,16 +73,8 @@ const MarketingDashboard = () => {
 
     performanceInFlightRef.current = true;
     try {
-      const response = await fetch(
-        `${(import.meta.env.VITE_API_URL || "http://localhost:5000/api").replace(/\/$/, "")}/sessions/marketing/my-performance`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-        },
-      );
-      const data = await response.json();
+      const response = await api.get("/sessions/marketing/my-performance");
+      const data = response.data;
       if (data?.success && data?.data) {
         setMyPerformance({
           ...data.data,
@@ -96,7 +87,7 @@ const MarketingDashboard = () => {
     } finally {
       performanceInFlightRef.current = false;
     }
-  }, [token]);
+  }, []);
 
   const queueDashboardRefresh = useCallback(() => {
     if (refreshTimerRef.current) return;
@@ -120,9 +111,7 @@ const MarketingDashboard = () => {
   }, []);
 
   useEffect(() => {
-    if (!token) return undefined;
-
-    const socket = connectSocket(token);
+    const socket = connectSocket();
     if (!socket) return undefined;
 
     const handleDashboardRefresh = () => {
@@ -138,7 +127,7 @@ const MarketingDashboard = () => {
         refreshTimerRef.current = null;
       }
     };
-  }, [queueDashboardRefresh, token]);
+  }, [queueDashboardRefresh]);
 
   if (isLoading || !marketingStats) {
     return (

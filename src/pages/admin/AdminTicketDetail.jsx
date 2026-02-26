@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
-import { useAuth } from "../../context/AuthContext";
+import { useAuth } from "../../hooks";
 import { Header, StatusBadge, LoadingSpinner } from "../../components";
 import {
   getTicketDetails,
@@ -460,7 +460,9 @@ export default function AdminTicketDetail() {
               {getReviewerValue(ticket) && (
                 <div className="status-detail-row">
                   <span className="status-label">Assigned To</span>
-                  <span className="reviewer-name">{getReviewerValue(ticket)}</span>
+                  <span className="reviewer-name">
+                    {getReviewerValue(ticket)}
+                  </span>
                 </div>
               )}
               {ticket.adminNote && (
@@ -481,7 +483,6 @@ export default function AdminTicketDetail() {
                 <p className="no-updates-text">No status updates yet</p>
               )}
             </div>
-
           </div>
         </div>
       </div>

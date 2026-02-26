@@ -50,8 +50,8 @@ export default function PublicRegistrationForm() {
       setError("Please select your name");
       return false;
     }
-    if (!formData.fullName || !formData.phone) {
-      setError("Please fill in name and phone from the visiting card");
+    if (!formData.fullName || !formData.phone || !formData.email) {
+      setError("Please fill in name, phone, and email from the visiting card");
       return false;
     }
     if (formData.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
@@ -84,6 +84,12 @@ export default function PublicRegistrationForm() {
     setIsSubmitting(true);
 
     try {
+      const apiKey = import.meta.env.VITE_PUBLIC_LEAD_API_KEY;
+      if (!apiKey) {
+        setError("Public lead API key is not configured");
+        return;
+      }
+
       const selectedRequirements = [
         ...formData.requirements,
         formData.requirementOther.trim()
@@ -93,20 +99,55 @@ export default function PublicRegistrationForm() {
         .filter(Boolean)
         .join(", ");
 
-      // TODO: Replace with actual API endpoint for creating clients/enquiries
-      // Example: POST /api/clients or /api/enquiries
-      // For now, generate a mock ID
-      const mockQueryId = `ENQ-${Date.now()}`;
+      const [firstName, ...restName] = formData.fullName.trim().split(/\s+/);
+      const lastName = restName.join(" ");
+      const messageParts = [
+        formData.notes?.trim(),
+        formData.expectedVolume?.trim()
+          ? `Expected Volume: ${formData.expectedVolume.trim()}`
+          : "",
+        `Captured By: ${formData.enteredBy}`,
+      ].filter(Boolean);
 
-      console.log("Public registration data to submit:", {
-        ...formData,
-        requirements: selectedRequirements,
-      });
+      const response = await axios.post(
+        `${import.meta.env.VITE_API_URL || "http://localhost:5000/api"}/public/lead`,
+        {
+          firstName,
+          lastName,
+          email: formData.email.trim(),
+          phone: formData.phone.trim(),
+          company: formData.company.trim(),
+          city: formData.city.trim(),
+          country: formData.country.trim(),
+          source: formData.source,
+          productInterest: selectedRequirements,
+          message: messageParts.join("\n"),
+          customFields: {
+            designation: formData.designation.trim(),
+            enteredBy: formData.enteredBy,
+          },
+          tags: formData.requirements,
+        },
+        {
+          headers: {
+            "x-api-key": apiKey,
+          },
+        },
+      );
 
-      setQueryId(mockQueryId);
+      const leadId = response?.data?.data?.leadId;
+      if (!leadId) {
+        throw new Error("Lead was submitted but no lead ID was returned");
+      }
+
+      setQueryId(leadId);
       setSubmitted(true);
     } catch (err) {
-      setError(err.message || "Something went wrong. Please try again.");
+      setError(
+        err.response?.data?.message ||
+          err.message ||
+          "Something went wrong. Please try again.",
+      );
     } finally {
       setIsSubmitting(false);
     }
@@ -261,14 +302,16 @@ export default function PublicRegistrationForm() {
                   </div>
 
                   <div className="form-group">
-                    <label htmlFor="email">Email Address</label>
+                    <label htmlFor="email">
+                      Email Address <span className="required">*</span>
+                    </label>
                     <input
                       type="email"
                       id="email"
                       name="email"
                       value={formData.email}
                       onChange={handleChange}
-                      placeholder="Email on card (if available)"
+                      placeholder="Email on card"
                     />
                   </div>
 

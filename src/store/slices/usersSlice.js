@@ -65,7 +65,9 @@ export const createUser = createAsyncThunk(
       const response = await usersService.create(data);
       return response.data.user;
     } catch (error) {
+      const apiErrors = error.response?.data?.errors;
       return rejectWithValue(
+        (Array.isArray(apiErrors) && apiErrors[0]?.message) ||
         error.response?.data?.message || "Failed to create user",
       );
     }
@@ -109,6 +111,34 @@ export const resetUserPassword = createAsyncThunk(
     } catch (error) {
       return rejectWithValue(
         error.response?.data?.message || "Failed to reset password",
+      );
+    }
+  },
+);
+
+export const approveUser = createAsyncThunk(
+  "users/approve",
+  async (id, { rejectWithValue }) => {
+    try {
+      const response = await usersService.approveUser(id);
+      return response.data.user;
+    } catch (error) {
+      return rejectWithValue(
+        error.response?.data?.message || "Failed to approve user",
+      );
+    }
+  },
+);
+
+export const rejectUser = createAsyncThunk(
+  "users/reject",
+  async (id, { rejectWithValue }) => {
+    try {
+      const response = await usersService.rejectUser(id);
+      return response.data.user;
+    } catch (error) {
+      return rejectWithValue(
+        error.response?.data?.message || "Failed to reject user",
       );
     }
   },
@@ -227,6 +257,40 @@ const usersSlice = createSlice({
         state.isLoading = false;
       })
       .addCase(resetUserPassword.rejected, (state, action) => {
+        state.isLoading = false;
+        state.error = action.payload;
+      })
+      // Approve User
+      .addCase(approveUser.pending, (state) => {
+        state.isLoading = true;
+      })
+      .addCase(approveUser.fulfilled, (state, action) => {
+        state.isLoading = false;
+        const index = state.users.findIndex(
+          (u) => u._id === action.payload._id,
+        );
+        if (index !== -1) {
+          state.users[index] = action.payload;
+        }
+      })
+      .addCase(approveUser.rejected, (state, action) => {
+        state.isLoading = false;
+        state.error = action.payload;
+      })
+      // Reject User
+      .addCase(rejectUser.pending, (state) => {
+        state.isLoading = true;
+      })
+      .addCase(rejectUser.fulfilled, (state, action) => {
+        state.isLoading = false;
+        const index = state.users.findIndex(
+          (u) => u._id === action.payload._id,
+        );
+        if (index !== -1) {
+          state.users[index] = action.payload;
+        }
+      })
+      .addCase(rejectUser.rejected, (state, action) => {
         state.isLoading = false;
         state.error = action.payload;
       });

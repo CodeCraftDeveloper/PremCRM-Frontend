@@ -24,11 +24,16 @@ export const ProtectedRoute = ({ children, allowedRoles }) => {
 
   if (allowedRoles && !allowedRoles.includes(user?.role)) {
     // Redirect to appropriate dashboard based on role
+    if (user?.role === "superadmin") {
+      return <Navigate to="/superadmin" replace />;
+    }
     if (user?.role === "admin") {
       return <Navigate to="/admin" replace />;
-    } else {
+    }
+    if (user?.role === "marketing") {
       return <Navigate to="/marketing" replace />;
     }
+    return <Navigate to="/login" replace />;
   }
 
   return children || <Outlet />;
@@ -41,8 +46,15 @@ export const PublicRoute = ({ children }) => {
   const { isAuthenticated, user } = useSelector((state) => state.auth);
 
   if (isAuthenticated) {
-    const redirectTo = user?.role === "admin" ? "/admin" : "/marketing";
-    return <Navigate to={redirectTo} replace />;
+    if (user?.role === "superadmin") {
+      return <Navigate to="/superadmin" replace />;
+    }
+    if (user?.role === "admin") {
+      return <Navigate to="/admin" replace />;
+    }
+    if (user?.role === "marketing") {
+      return <Navigate to="/marketing" replace />;
+    }
   }
 
   return children;

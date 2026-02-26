@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from "react";
 import { Link } from "react-router-dom";
-import { useAuth } from "../../context/AuthContext";
+import { useAuth } from "../../hooks";
 import { Header, LoadingSpinner, EmptyState } from "../../components";
 import { getTickets } from "../../services/googleSheets";
 import { getInitials, parseSheetOptions } from "../../utils/helpers";

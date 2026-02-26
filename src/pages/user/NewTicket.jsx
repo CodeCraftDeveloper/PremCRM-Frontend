@@ -1,9 +1,8 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { useAuth } from "../../context/AuthContext";
+import { useAuth } from "../../hooks";
 import { Header } from "../../components";
 import { REQUIREMENT_OPTIONS, PRIORITY_OPTIONS } from "../../constants";
-import axios from "axios";
 
 const INITIAL_FORM = {
   fullName: "",
@@ -22,7 +21,7 @@ const INITIAL_FORM = {
 
 export default function NewTicket() {
   const navigate = useNavigate();
-  const { user, token } = useAuth();
+  const { user } = useAuth();
   const [formData, setFormData] = useState({
     ...INITIAL_FORM,
     fullName: user?.name || "",

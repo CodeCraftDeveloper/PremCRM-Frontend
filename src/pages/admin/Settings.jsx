@@ -82,6 +82,7 @@ const Settings = () => {
         changePassword({
           currentPassword: data.currentPassword,
           newPassword: data.newPassword,
+          confirmPassword: data.confirmPassword,
         }),
       ).unwrap();
       toast.success("Password changed successfully");

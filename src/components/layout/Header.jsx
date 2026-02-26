@@ -37,7 +37,11 @@ const Header = () => {
   const handleProfileClick = () => {
     setShowDropdown(false);
     const profilePath =
-      user?.role === "admin" ? "/admin/settings" : "/marketing/settings";
+      user?.role === "superadmin"
+        ? "/superadmin"
+        : user?.role === "admin"
+          ? "/admin/settings"
+          : "/marketing/settings";
     navigate(profilePath);
   };
 
@@ -60,7 +64,11 @@ const Header = () => {
           <Menu className="h-5 w-5 text-gray-600 dark:text-gray-300" />
         </button>
         <h1 className="text-sm md:text-lg font-semibold text-gray-800 dark:text-white truncate">
-          {user?.role === "admin" ? "Admin Panel" : "Marketing Dashboard"}
+          {user?.role === "superadmin"
+            ? "SuperAdmin Panel"
+            : user?.role === "admin"
+              ? "Admin Panel"
+              : "Marketing Dashboard"}
         </h1>
       </div>
 
@@ -91,7 +99,7 @@ const Header = () => {
             onClick={() => setShowDropdown(!showDropdown)}
             className="flex items-center gap-2 rounded-lg p-2 hover:bg-gray-100 dark:hover:bg-gray-700"
           >
-            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-blue-500 text-white text-xs md:text-sm flex-shrink-0">
+            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-blue-500 text-white text-xs md:text-sm shrink-0">
               {user?.name?.charAt(0).toUpperCase() || "U"}
             </div>
             <div className="hidden text-left md:block">

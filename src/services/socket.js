@@ -23,7 +23,6 @@ const getOrCreateTabSessionId = () => {
 };
 
 export const connectSocket = (token) => {
-  if (!token) return null;
   const sessionId = getOrCreateTabSessionId();
 
   if (!socket) {
@@ -34,7 +33,7 @@ export const connectSocket = (token) => {
     });
   }
 
-  socket.auth = { token, sessionId };
+  socket.auth = token ? { token, sessionId } : { sessionId };
   if (!socket.connected) {
     socket.connect();
   }

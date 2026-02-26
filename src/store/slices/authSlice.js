@@ -1,13 +1,10 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
-import { authService } from "../../services";
+import apiClient from "../../services/api";
 
-// Get user from localStorage
-const user = JSON.parse(localStorage.getItem("user"));
-const accessToken = localStorage.getItem("accessToken");
-
+// Initial state - tokens are now in httpOnly cookies (no localStorage)
 const initialState = {
-  user: user || null,
-  isAuthenticated: !!accessToken,
+  user: null,
+  isAuthenticated: false,
   isLoading: false,
   error: null,
 };
@@ -17,80 +14,68 @@ export const login = createAsyncThunk(
   "auth/login",
   async (credentials, { rejectWithValue }) => {
     try {
-      const response = await authService.login(credentials);
-      const { user, accessToken, refreshToken } = response.data;
+      const response = await apiClient.post("/auth/login", credentials);
+      const { user } = response.data.data;
 
-      // Save to localStorage
-      localStorage.setItem("user", JSON.stringify(user));
-      localStorage.setItem("accessToken", accessToken);
-      localStorage.setItem("refreshToken", refreshToken);
-
-      return { user, accessToken, refreshToken };
+      // Tokens are in httpOnly cookies (handled by browser automatically)
+      return { user };
     } catch (error) {
       return rejectWithValue(error.response?.data?.message || "Login failed");
     }
-  },
+  }
 );
 
-export const logout = createAsyncThunk(
-  "auth/logout",
-  async () => {
-    try {
-      await authService.logout();
-    } catch {
-      // Continue with logout even if API fails
-    } finally {
-      localStorage.removeItem("user");
-      localStorage.removeItem("accessToken");
-      localStorage.removeItem("refreshToken");
-    }
-  },
-);
+export const logout = createAsyncThunk("auth/logout", async () => {
+  try {
+    await apiClient.post("/auth/logout");
+  } catch {
+    // Continue with logout even if API fails
+  }
+  // Browser will automatically clear httpOnly cookies on logout
+});
 
 export const getMe = createAsyncThunk(
   "auth/getMe",
   async (_, { rejectWithValue }) => {
     try {
-      const response = await authService.getMe();
-      const user = response.data.user;
-      localStorage.setItem("user", JSON.stringify(user));
+      const response = await apiClient.get("/auth/me");
+      const { user } = response.data.data;
       return user;
     } catch (error) {
       return rejectWithValue(
-        error.response?.data?.message || "Failed to get user",
+        error.response?.data?.message || "Failed to get user"
       );
     }
-  },
+  }
 );
 
 export const updateProfile = createAsyncThunk(
   "auth/updateProfile",
   async (data, { rejectWithValue }) => {
     try {
-      const response = await authService.updateProfile(data);
-      const user = response.data.user;
-      localStorage.setItem("user", JSON.stringify(user));
+      const response = await apiClient.put("/auth/me", data);
+      const { user } = response.data.data;
       return user;
     } catch (error) {
       return rejectWithValue(
-        error.response?.data?.message || "Failed to update profile",
+        error.response?.data?.message || "Failed to update profile"
       );
     }
-  },
+  }
 );
 
 export const changePassword = createAsyncThunk(
   "auth/changePassword",
   async (data, { rejectWithValue }) => {
     try {
-      await authService.changePassword(data);
+      await apiClient.put("/auth/change-password", data);
       return true;
     } catch (error) {
       return rejectWithValue(
-        error.response?.data?.message || "Failed to change password",
+        error.response?.data?.message || "Failed to change password"
       );
     }
-  },
+  }
 );
 
 const authSlice = createSlice({

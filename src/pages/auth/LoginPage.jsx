@@ -37,7 +37,9 @@ export const LoginPage = () => {
 
       toast.success(`Welcome back, ${result.user.name}!`);
 
-      if (result.user.role === "admin") {
+      if (result.user.role === "superadmin") {
+        navigate("/superadmin");
+      } else if (result.user.role === "admin") {
         navigate("/admin");
       } else {
         navigate("/marketing");
@@ -57,14 +59,20 @@ export const LoginPage = () => {
           <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-violet-500 to-indigo-600 shadow-lg shadow-violet-950/40">
             <Briefcase className="h-8 w-8 text-white" />
           </div>
-          <h1 className="text-3xl font-bold tracking-tight text-white">CRM Portal</h1>
-          <p className="mt-2 text-sm text-slate-300">Sign in to manage your clients</p>
+          <h1 className="text-3xl font-bold tracking-tight text-white">
+            CRM Portal
+          </h1>
+          <p className="mt-2 text-sm text-slate-300">
+            Sign in to manage your clients
+          </p>
         </div>
 
         <div className="rounded-2xl border border-slate-700/70 bg-slate-900/75 p-5 shadow-2xl backdrop-blur-xl">
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
             <div>
-              <label className="mb-2 block text-sm font-medium text-slate-100">Email Address</label>
+              <label className="mb-2 block text-sm font-medium text-slate-100">
+                Email Address
+              </label>
               <div
                 className={`flex h-11 items-center rounded-lg border bg-slate-950 ${
                   errors.email ? "border-red-500" : "border-slate-700"
@@ -78,11 +86,17 @@ export const LoginPage = () => {
                   {...register("email")}
                 />
               </div>
-              {errors.email && <p className="mt-1 text-xs text-red-400">{errors.email.message}</p>}
+              {errors.email && (
+                <p className="mt-1 text-xs text-red-400">
+                  {errors.email.message}
+                </p>
+              )}
             </div>
 
             <div>
-              <label className="mb-2 block text-sm font-medium text-slate-100">Password</label>
+              <label className="mb-2 block text-sm font-medium text-slate-100">
+                Password
+              </label>
               <div
                 className={`flex h-11 items-center rounded-lg border bg-slate-950 ${
                   errors.password ? "border-red-500" : "border-slate-700"
@@ -101,10 +115,18 @@ export const LoginPage = () => {
                   onClick={() => setShowPassword(!showPassword)}
                   aria-label={showPassword ? "Hide password" : "Show password"}
                 >
-                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  {showPassword ? (
+                    <EyeOff className="h-4 w-4" />
+                  ) : (
+                    <Eye className="h-4 w-4" />
+                  )}
                 </button>
               </div>
-              {errors.password && <p className="mt-1 text-xs text-red-400">{errors.password.message}</p>}
+              {errors.password && (
+                <p className="mt-1 text-xs text-red-400">
+                  {errors.password.message}
+                </p>
+              )}
             </div>
 
             <button
@@ -144,15 +166,28 @@ export const LoginPage = () => {
 
           <div className="mt-4 border-t border-slate-700 pt-4 text-center">
             <Link
+              to="/create-tenant"
+              className="text-sm font-medium text-violet-300 hover:text-violet-200"
+            >
+              Create Tenant Workspace
+            </Link>
+            <p className="mt-1 text-xs text-slate-400">
+              Set up tenant + admin + company link
+            </p>
+          </div>
+
+          <div className="mt-4 border-t border-slate-700 pt-4 text-center">
+            <Link
               to="/register-marketing-manager"
               className="text-sm font-medium text-cyan-300 hover:text-cyan-200"
             >
               Register Marketing Manager
             </Link>
-            <p className="mt-1 text-xs text-slate-400">No admin login required</p>
+            <p className="mt-1 text-xs text-slate-400">
+              No admin login required
+            </p>
           </div>
         </div>
-
       </div>
     </div>
   );

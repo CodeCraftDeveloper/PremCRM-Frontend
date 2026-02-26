@@ -8,9 +8,22 @@ import { authService } from "../../services";
 import toast from "react-hot-toast";
 
 const registerSchema = z.object({
+  tenantSlug: z
+    .string()
+    .min(2, "Company ID must be at least 2 characters")
+    .regex(
+      /^[a-z0-9-]+$/,
+      "Company ID can only contain lowercase letters, numbers, and hyphens",
+    ),
   name: z.string().min(2, "Name must be at least 2 characters"),
   email: z.string().email("Invalid email address"),
-  password: z.string().min(8, "Password must be at least 8 characters"),
+  password: z
+    .string()
+    .min(8, "Password must be at least 8 characters")
+    .regex(
+      /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).+$/,
+      "Password must include uppercase, lowercase, and a number",
+    ),
   phone: z.string().optional(),
 });
 
@@ -26,6 +39,7 @@ const MarketingManagerRegistrationPage = () => {
   } = useForm({
     resolver: zodResolver(registerSchema),
     defaultValues: {
+      tenantSlug: "",
       name: "",
       email: "",
       password: "",
@@ -36,12 +50,17 @@ const MarketingManagerRegistrationPage = () => {
   const onSubmit = async (data) => {
     try {
       await authService.registerMarketingManager(data);
-      toast.success("Registration successful. Please sign in.");
+      toast.success(
+        "Registration submitted successfully. Please wait for admin approval.",
+        { duration: 5000 },
+      );
       navigate("/login");
     } catch (error) {
-      toast.error(
-        error?.response?.data?.message || "Failed to register marketing manager",
-      );
+      const apiMessage =
+        error?.response?.data?.errors?.[0]?.message ||
+        error?.response?.data?.message ||
+        "Failed to register marketing manager";
+      toast.error(apiMessage);
     }
   };
 
@@ -61,6 +80,20 @@ const MarketingManagerRegistrationPage = () => {
         </div>
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+          <div>
+            <Input
+              label="Company ID"
+              placeholder="acme-workspace"
+              error={errors.tenantSlug?.message}
+              labelClassName="text-slate-200"
+              className={darkFieldClasses}
+              required
+              {...register("tenantSlug")}
+            />
+            <p className="mt-1 text-xs text-slate-400">
+              Ask your company admin for this ID
+            </p>
+          </div>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <Input
               label="Full Name"
@@ -109,7 +142,10 @@ const MarketingManagerRegistrationPage = () => {
 
         <p className="mt-4 text-center text-sm text-slate-300">
           Already have an account?{" "}
-          <Link to="/login" className="font-medium text-cyan-300 hover:text-cyan-200">
+          <Link
+            to="/login"
+            className="font-medium text-cyan-300 hover:text-cyan-200"
+          >
             Sign in
           </Link>
         </p>

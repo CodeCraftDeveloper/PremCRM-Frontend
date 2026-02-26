@@ -15,10 +15,21 @@ import {
 // Layouts
 import AdminLayout from "./components/layout/AdminLayout";
 import MarketingLayout from "./components/layout/MarketingLayout";
+import SuperAdminLayout from "./components/layout/SuperAdminLayout";
+
+// SuperAdmin Pages
+import {
+  SuperAdminDashboard,
+  TenantsManagement,
+  TenantDetail,
+  AllUsersPage,
+  PlatformActivity,
+} from "./pages/superadmin";
 
 // Auth Page
 import LoginPage from "./pages/auth/LoginPage";
 import MarketingManagerRegistrationPage from "./pages/auth/MarketingManagerRegistrationPage";
+import CreateTenantPage from "./pages/auth/CreateTenantPage";
 
 // Admin Pages
 import AdminDashboard from "./pages/admin/AdminDashboard";
@@ -35,9 +46,18 @@ import { EventsList, EventForm } from "./pages/events";
 // Clients Pages
 import { ClientsList, ClientDetail, ClientForm } from "./pages/clients";
 
+// Leads Pages
+import { LeadsList, LeadDetail, LeadAnalytics, LeadForm } from "./pages/leads";
+
+// Websites Pages
+import { WebsitesList, WebsiteDetail, WebsiteForm } from "./pages/websites";
+
+// Query Management
+import { QueryManagement } from "./pages/queries";
+
 // Marketing Pages
 import MarketingDashboard from "./pages/marketing/MarketingDashboard";
-import { connectSocket, disconnectSocket } from "./services/socket";
+import * as socketService from "./services/socket";
 
 function App() {
   const dispatch = useDispatch();
@@ -46,10 +66,8 @@ function App() {
 
   // Check authentication on app load
   useEffect(() => {
-    const token = localStorage.getItem("accessToken");
-    if (token) {
-      dispatch(getMe());
-    }
+    // Tokens are httpOnly cookies; try restoring session once on boot.
+    dispatch(getMe());
   }, [dispatch]);
 
   // Apply theme globally using class-based dark mode.
@@ -73,15 +91,14 @@ function App() {
 
   // Keep authenticated users connected via socket for live status updates.
   useEffect(() => {
-    const token = localStorage.getItem("accessToken");
-    if (isAuthenticated && token) {
-      connectSocket(token);
+    if (isAuthenticated) {
+      socketService.connectSocket();
     } else {
-      disconnectSocket();
+      socketService.disconnectSocket();
     }
 
     return () => {
-      disconnectSocket();
+      socketService.disconnectSocket();
     };
   }, [isAuthenticated]);
 
@@ -131,6 +148,30 @@ function App() {
             </PublicRoute>
           }
         />
+        <Route
+          path="/create-tenant"
+          element={
+            <PublicRoute>
+              <CreateTenantPage />
+            </PublicRoute>
+          }
+        />
+
+        {/* SuperAdmin Routes */}
+        <Route
+          path="/superadmin"
+          element={
+            <ProtectedRoute allowedRoles={["superadmin"]}>
+              <SuperAdminLayout />
+            </ProtectedRoute>
+          }
+        >
+          <Route index element={<SuperAdminDashboard />} />
+          <Route path="tenants" element={<TenantsManagement />} />
+          <Route path="tenants/:id" element={<TenantDetail />} />
+          <Route path="users" element={<AllUsersPage />} />
+          <Route path="activity" element={<PlatformActivity />} />
+        </Route>
 
         {/* Admin Routes */}
         <Route
@@ -169,6 +210,25 @@ function App() {
           <Route path="clients/:id" element={<ClientDetail isAdmin />} />
           <Route path="clients/:id/edit" element={<ClientForm isEdit />} />
 
+          {/* Leads Management */}
+          <Route path="leads" element={<LeadsList isAdmin />} />
+          <Route path="leads/new" element={<LeadForm />} />
+          <Route path="leads/analytics" element={<LeadAnalytics isAdmin />} />
+          <Route path="leads/:id" element={<LeadDetail isAdmin />} />
+
+          {/* Websites Management */}
+          <Route path="websites" element={<WebsitesList />} />
+          <Route path="websites/new" element={<WebsiteForm />} />
+          <Route path="websites/:id" element={<WebsiteDetail />} />
+          <Route path="websites/:id/edit" element={<WebsiteForm isEdit />} />
+
+          {/* Query Management — Centralised queries from all sources */}
+          <Route path="queries" element={<QueryManagement isAdmin />} />
+          <Route
+            path="queries/:websiteId"
+            element={<QueryManagement isAdmin />}
+          />
+
           {/* Reports & Settings */}
           <Route path="reports" element={<Reports />} />
           <Route path="settings" element={<Settings />} />
@@ -198,6 +258,21 @@ function App() {
           <Route
             path="clients/:id/edit"
             element={<ClientForm isAdmin={false} isEdit />}
+          />
+
+          {/* Leads Management (Marketing View) */}
+          <Route path="leads" element={<LeadsList isAdmin={false} />} />
+          <Route
+            path="leads/analytics"
+            element={<LeadAnalytics isAdmin={false} />}
+          />
+          <Route path="leads/:id" element={<LeadDetail isAdmin={false} />} />
+
+          {/* Query Management */}
+          <Route path="queries" element={<QueryManagement isAdmin={false} />} />
+          <Route
+            path="queries/:websiteId"
+            element={<QueryManagement isAdmin={false} />}
           />
 
           {/* Settings */}
