@@ -1,10 +1,11 @@
 import axios from "axios";
+import toast from "react-hot-toast";
 import store from "../store";
 import { setUser } from "../store/slices/authSlice";
 
 // Create axios instance
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || "http://localhost:5000/api",
+  baseURL: import.meta.env.VITE_API_URL || "http://localhost:5000/api/v1",
   headers: {
     "Content-Type": "application/json",
   },
@@ -34,10 +35,13 @@ api.interceptors.request.use(
     config.headers["X-Request-ID"] =
       `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 
-    // Get CSRF token from meta tag if available
-    const csrfToken = document.querySelector(
-      'meta[name="csrf-token"]',
-    )?.content;
+    // Read CSRF token from cookie (double-submit cookie pattern)
+    const csrfToken =
+      document.cookie
+        .split("; ")
+        .find((row) => row.startsWith("csrf-token="))
+        ?.split("=")[1] ||
+      document.querySelector('meta[name="csrf-token"]')?.content;
     if (csrfToken) {
       config.headers["X-CSRF-Token"] = csrfToken;
     }
@@ -60,14 +64,20 @@ api.interceptors.response.use(
       requestUrl.includes("/auth/logout") ||
       requestUrl.includes("/auth/refresh-token");
 
-    // If 401 Unauthorized (token expired)
-    if (
-      error.response?.status === 401 &&
-      !originalRequest?._retry &&
-      !isAuthEndpoint
-    ) {
+    // ── Extract backend structured error fields ──────────────
+    const status = error.response?.status;
+    const body = error.response?.data || {};
+    const message = body.message || error.message || "Something went wrong";
+    const requestId = body.requestId;
+
+    // Log requestId in development for traceability
+    if (import.meta.env.DEV && requestId) {
+      console.warn(`[API ${status}] requestId=${requestId}  ${message}`);
+    }
+
+    // ── 401 — Attempt silent token refresh ───────────────────
+    if (status === 401 && !originalRequest?._retry && !isAuthEndpoint) {
       if (isRefreshing) {
-        // Queue this request to retry after token refresh
         return new Promise((resolve, reject) => {
           failedQueue.push({ resolve, reject });
         })
@@ -79,37 +89,36 @@ api.interceptors.response.use(
       isRefreshing = true;
 
       try {
-        // Refresh token - tokens are in httpOnly cookies, browser sends automatically
         await api.post("/auth/refresh-token");
-
-        // New tokens are in httpOnly cookies (browser automatically handles)
         processQueue(null);
-
-        // Retry the original request
         return api(originalRequest);
       } catch (refreshError) {
-        // Refresh failed - clear local auth state and go to login
         processQueue(refreshError, null);
         store.dispatch(setUser(null));
+        toast.error("Session expired. Please log in again.");
         return Promise.reject(refreshError);
       } finally {
         isRefreshing = false;
       }
     }
 
-    // If 403 Forbidden
-    if (error.response?.status === 403) {
-      console.error("Access forbidden - insufficient permissions");
+    // ── 403 — Forbidden (RBAC) ───────────────────────────────
+    if (status === 403) {
+      toast.error(
+        message || "You don't have permission to perform this action.",
+      );
     }
 
-    // If 429 Too Many Requests
-    if (error.response?.status === 429) {
-      console.error("Rate limited - too many requests");
+    // ── 429 — Rate limited ───────────────────────────────────
+    if (status === 429) {
+      toast.error(message || "Too many requests. Please slow down.", {
+        id: "rate-limit-error",
+      });
     }
 
-    // If 5xx Server Error
-    if (error.response?.status >= 500) {
-      console.error("Server error - please try again later");
+    // ── 5xx — Server error ───────────────────────────────────
+    if (status >= 500) {
+      toast.error("Server error — please try again later.");
     }
 
     return Promise.reject(error);

@@ -136,10 +136,7 @@ const QueryManagement = ({ isAdmin = true }) => {
   const { websites } = useSelector((state) => state.websites);
   const { marketingUsers } = useSelector((state) => state.users);
 
-  const leadsList = useMemo(
-    () => (Array.isArray(leads) ? leads : []),
-    [leads],
-  );
+  const leadsList = useMemo(() => (Array.isArray(leads) ? leads : []), [leads]);
   const websitesList = Array.isArray(websites) ? websites : [];
   const marketingUsersList = Array.isArray(marketingUsers)
     ? marketingUsers
@@ -164,8 +161,10 @@ const QueryManagement = ({ isAdmin = true }) => {
   /* ── initial data load ── */
   useEffect(() => {
     dispatch(fetchWebsites({ limit: 100 }));
-    dispatch(fetchUnassignedCount());
-    if (isAdmin) dispatch(fetchMarketingUsers());
+    if (isAdmin) {
+      dispatch(fetchUnassignedCount());
+      dispatch(fetchMarketingUsers());
+    }
   }, [dispatch, isAdmin]);
 
   useEffect(() => {
@@ -394,7 +393,7 @@ const QueryManagement = ({ isAdmin = true }) => {
           </h1>
           <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
             {totalQueries} total queries from {websitesList.length} sources
-            {unassignedCount > 0 && (
+            {isAdmin && unassignedCount > 0 && (
               <span className="ml-2 text-amber-600 dark:text-amber-400">
                 &bull; {unassignedCount} unassigned
               </span>
@@ -402,30 +401,33 @@ const QueryManagement = ({ isAdmin = true }) => {
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
-          <Link
-            to={
-              isAdmin ? "/admin/leads/analytics" : "/marketing/leads/analytics"
-            }
-          >
-            <Button variant="outline" size="sm">
-              <BarChart3 className="mr-2 h-4 w-4" />
-              Analytics
+          {isAdmin && (
+            <Link to="/admin/leads/analytics">
+              <Button variant="outline" size="sm">
+                <BarChart3 className="mr-2 h-4 w-4" />
+                Analytics
+              </Button>
+            </Link>
+          )}
+          {isAdmin && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setExportModalOpen(true)}
+            >
+              <FileSpreadsheet className="mr-2 h-4 w-4" />
+              Export to Excel
             </Button>
-          </Link>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setExportModalOpen(true)}
-          >
-            <FileSpreadsheet className="mr-2 h-4 w-4" />
-            Export to Excel
-          </Button>
+          )}
           <Button
             variant="outline"
             size="sm"
             onClick={() => {
               dispatch(fetchLeads({ page: 1, limit: pagination.limit }));
               dispatch(fetchWebsites({ limit: 100 }));
+              if (isAdmin) {
+                dispatch(fetchUnassignedCount());
+              }
               toast.success("Refreshed");
             }}
           >

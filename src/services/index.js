@@ -456,3 +456,112 @@ export const exportService = {
     return response.data;
   },
 };
+
+// ═══════════════════════════════════════════════════════════
+// Tickets
+// ═══════════════════════════════════════════════════════════
+
+/**
+ * Tickets service
+ */
+export const ticketsService = {
+  getAll: async (params) => {
+    const response = await api.get("/tickets", { params });
+    return response.data;
+  },
+
+  getOne: async (id) => {
+    const response = await api.get(`/tickets/${id}`);
+    return response.data;
+  },
+
+  create: async (data) => {
+    const response = await api.post("/tickets", data);
+    return response.data;
+  },
+
+  update: async (id, data) => {
+    const response = await api.put(`/tickets/${id}`, data);
+    return response.data;
+  },
+
+  updateStatus: async (id, status) => {
+    const response = await api.put(`/tickets/${id}/status`, { status });
+    return response.data;
+  },
+
+  assign: async (id, assignToUserId) => {
+    const response = await api.put(`/tickets/${id}/assign`, {
+      assignToUserId,
+    });
+    return response.data;
+  },
+
+  delete: async (id) => {
+    const response = await api.delete(`/tickets/${id}`);
+    return response.data;
+  },
+
+  restore: async (id) => {
+    const response = await api.put(`/tickets/${id}/restore`);
+    return response.data;
+  },
+
+  getStats: async () => {
+    const response = await api.get("/tickets/stats");
+    return response.data;
+  },
+
+  getFollowUps: async (days = 7) => {
+    const response = await api.get("/tickets/follow-ups", {
+      params: { days },
+    });
+    return response.data;
+  },
+
+  getByEntity: async (entityType, entityId) => {
+    const response = await api.get(`/tickets/entity/${entityType}/${entityId}`);
+    return response.data;
+  },
+
+  bulkUpdateStatus: async (ticketIds, status) => {
+    const response = await api.put("/tickets/bulk/status", {
+      ticketIds,
+      status,
+    });
+    return response.data;
+  },
+
+  bulkAssign: async (ticketIds, assignToUserId) => {
+    const response = await api.put("/tickets/bulk/assign", {
+      ticketIds,
+      assignToUserId,
+    });
+    return response.data;
+  },
+};
+
+/**
+ * Ticket Remarks service
+ */
+export const ticketRemarksService = {
+  getByTicket: async (ticketId, params) => {
+    const response = await api.get(`/tickets/${ticketId}/remarks`, { params });
+    return response.data;
+  },
+
+  create: async (ticketId, data) => {
+    const response = await api.post(`/tickets/${ticketId}/remarks`, data);
+    return response.data;
+  },
+
+  update: async (id, data) => {
+    const response = await api.put(`/tickets/remarks/${id}`, data);
+    return response.data;
+  },
+
+  delete: async (id) => {
+    const response = await api.delete(`/tickets/remarks/${id}`);
+    return response.data;
+  },
+};

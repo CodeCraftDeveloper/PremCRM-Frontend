@@ -24,7 +24,7 @@ import {
   Cell,
 } from "recharts";
 import { fetchAdminDashboard } from "../../store/slices/dashboardSlice";
-import { StatCard, LoadingSpinner, StatusBadge } from "../../components/ui";
+import { StatCard, StatusBadge, DashboardSkeleton } from "../../components/ui";
 import { format } from "date-fns";
 
 const COLORS = [
@@ -54,11 +54,7 @@ const AdminDashboard = () => {
   }, [dispatch]);
 
   if (isLoading || !adminStats) {
-    return (
-      <div className="flex h-96 items-center justify-center">
-        <LoadingSpinner text="Loading dashboard..." />
-      </div>
-    );
+    return <DashboardSkeleton />;
   }
 
   const { overview, clientStats, monthlyTrend, topMarketers, recentClients } =

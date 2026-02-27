@@ -8,6 +8,9 @@ import leadsReducer from "./slices/leadsSlice";
 import websitesReducer from "./slices/websitesSlice";
 import uiReducer from "./slices/uiSlice";
 import superAdminReducer from "./slices/superAdminSlice";
+import crmReducer from "./slices/crm/crmSlice";
+import metadataReducer from "./slices/crm/metadataSlice";
+import ticketsReducer from "./slices/ticketsSlice";
 
 export const store = configureStore({
   reducer: {
@@ -20,6 +23,9 @@ export const store = configureStore({
     websites: websitesReducer,
     ui: uiReducer,
     superAdmin: superAdminReducer,
+    crm: crmReducer,
+    metadata: metadataReducer,
+    tickets: ticketsReducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({

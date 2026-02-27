@@ -16,7 +16,7 @@ import {
   SearchInput,
   Select,
   Pagination,
-  LoadingSpinner,
+  ListSkeleton,
   EmptyState,
   StatusBadge,
   PriorityBadge,
@@ -209,9 +209,7 @@ const ClientsList = ({ isAdmin = true }) => {
 
       {/* Clients Table/List */}
       {isLoading ? (
-        <div className="flex h-64 items-center justify-center">
-          <LoadingSpinner text="Loading clients..." />
-        </div>
+        <ListSkeleton />
       ) : clients.length === 0 ? (
         <EmptyState
           title="No clients found"
@@ -362,92 +360,6 @@ const ClientsList = ({ isAdmin = true }) => {
                           title="Delete"
                         >
                           <span className="hidden sm:inline">Delete</span>
-                        </Button>
-                      )}
-                    </div>
-                  </td>
-                  <td className="px-4 py-3">
-                    <div>
-                      <p className="text-sm text-gray-900 dark:text-white">
-                        {client.email}
-                      </p>
-                      <p className="text-sm text-gray-500 dark:text-gray-400">
-                        {client.phone}
-                      </p>
-                    </div>
-                  </td>
-                  <td className="px-4 py-3">
-                    <p className="text-sm text-gray-900 dark:text-white">
-                      {client.event?.name || "-"}
-                    </p>
-                  </td>
-                  <td className="px-4 py-3">
-                    <StatusBadge status={client.followUpStatus} />
-                  </td>
-                  <td className="px-4 py-3">
-                    <PriorityBadge priority={client.priority} />
-                  </td>
-                  <td className="px-4 py-3">
-                    <p className="text-sm text-gray-900 dark:text-white">
-                      {client.nextFollowUpDate
-                        ? format(
-                            new Date(client.nextFollowUpDate),
-                            "MMM d, yyyy",
-                          )
-                        : "-"}
-                    </p>
-                  </td>
-                  <td className="px-4 py-3">
-                    <div>
-                      <p className="text-sm text-gray-900 dark:text-white">
-                        {client.createdBy?.name ||
-                          client.marketingPerson?.name ||
-                          "-"}
-                      </p>
-                      <p className="text-xs text-gray-500 dark:text-gray-400">
-                        {client.createdBy?.email ||
-                          client.marketingPerson?.email ||
-                          ""}
-                      </p>
-                    </div>
-                  </td>
-                  <td className="px-4 py-3">
-                    <div>
-                      <p className="text-sm text-gray-900 dark:text-white">
-                        {client.lastContactedBy?.name || "-"}
-                      </p>
-                      <p className="text-xs text-gray-500 dark:text-gray-400">
-                        {client.lastContactedDate
-                          ? format(
-                              new Date(client.lastContactedDate),
-                              "MMM d, yyyy h:mm a",
-                            )
-                          : ""}
-                      </p>
-                    </div>
-                  </td>
-                  <td className="px-4 py-3">
-                    <div className="flex items-center justify-end gap-2">
-                      <Link to={`${basePath}/clients/${client._id}`}>
-                        <Button variant="ghost" size="sm" icon={Eye}>
-                          View
-                        </Button>
-                      </Link>
-                      <Link to={`${basePath}/clients/${client._id}/edit`}>
-                        <Button variant="ghost" size="sm" icon={Edit}>
-                          Edit
-                        </Button>
-                      </Link>
-                      {(isAdmin ||
-                        client.marketingPerson?._id === user?._id) && (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          icon={Trash2}
-                          onClick={() => handleDeleteClick(client)}
-                          className="text-red-600 hover:text-red-700"
-                        >
-                          Delete
                         </Button>
                       )}
                     </div>

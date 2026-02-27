@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../hooks";
-import axios from "axios";
 
 export default function AdminLogin() {
   const navigate = useNavigate();
@@ -31,18 +30,11 @@ export default function AdminLogin() {
 
     setIsLoading(true);
     try {
-      const response = await axios.post(
-        "http://localhost:5000/api/auth/login",
-        {
-          email: formData.email,
-          password: formData.password,
-        },
-      );
-
-      if (response.data.success) {
-        const { token, user } = response.data.data;
-        login(token, user);
+      const result = await login(formData.email, formData.password);
+      if (result.success) {
         navigate("/admin");
+      } else {
+        setError(result.error || "Login failed. Please check your credentials.");
       }
     } catch (err) {
       setError(

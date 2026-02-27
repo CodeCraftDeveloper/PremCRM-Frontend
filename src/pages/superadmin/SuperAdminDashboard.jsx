@@ -28,7 +28,8 @@ const COLOR_MAP = {
   amber: { bg: "bg-amber-500/15", text: "text-amber-600 dark:text-amber-400" },
 };
 
-const StatCard = ({ icon: Icon, label, value, color = "blue", sub }) => {
+const StatCard = ({ icon, label, value, color = "blue", sub }) => {
+  const Icon = icon;
   const c = COLOR_MAP[color] || COLOR_MAP.blue;
   return (
     <div className="rounded-xl border border-slate-200 bg-white p-5 backdrop-blur dark:border-slate-700/60 dark:bg-slate-800/60">
@@ -43,7 +44,9 @@ const StatCard = ({ icon: Icon, label, value, color = "blue", sub }) => {
           <p className="text-2xl font-bold text-slate-900 dark:text-white">
             {value ?? "—"}
           </p>
-          {sub && <p className="text-xs text-slate-500 dark:text-slate-500">{sub}</p>}
+          {sub && (
+            <p className="text-xs text-slate-500 dark:text-slate-500">{sub}</p>
+          )}
         </div>
       </div>
     </div>

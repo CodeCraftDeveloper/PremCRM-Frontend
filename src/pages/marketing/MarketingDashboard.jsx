@@ -11,7 +11,7 @@ import {
 } from "lucide-react";
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts";
 import { fetchMarketingDashboard } from "../../store/slices/dashboardSlice";
-import { StatCard, LoadingSpinner, StatusBadge } from "../../components/ui";
+import { StatCard, StatusBadge, DashboardSkeleton } from "../../components/ui";
 import { format } from "date-fns";
 import { connectSocket } from "../../services/socket";
 import api from "../../services/api";
@@ -48,25 +48,34 @@ const MarketingDashboard = () => {
   const [nowTick, setNowTick] = useState(Date.now());
   const MIN_FETCH_INTERVAL_MS = 3000;
 
-  const fetchLatestDashboard = useCallback(async (force = false) => {
-    const now = Date.now();
-    if (!force && now - lastDashboardFetchAtRef.current < MIN_FETCH_INTERVAL_MS) {
-      return;
-    }
-    if (dashboardInFlightRef.current) return;
+  const fetchLatestDashboard = useCallback(
+    async (force = false) => {
+      const now = Date.now();
+      if (
+        !force &&
+        now - lastDashboardFetchAtRef.current < MIN_FETCH_INTERVAL_MS
+      ) {
+        return;
+      }
+      if (dashboardInFlightRef.current) return;
 
-    dashboardInFlightRef.current = true;
-    try {
-      await dispatch(fetchMarketingDashboard());
-      lastDashboardFetchAtRef.current = Date.now();
-    } finally {
-      dashboardInFlightRef.current = false;
-    }
-  }, [dispatch]);
+      dashboardInFlightRef.current = true;
+      try {
+        await dispatch(fetchMarketingDashboard());
+        lastDashboardFetchAtRef.current = Date.now();
+      } finally {
+        dashboardInFlightRef.current = false;
+      }
+    },
+    [dispatch],
+  );
 
   const fetchMyPerformance = useCallback(async (force = false) => {
     const now = Date.now();
-    if (!force && now - lastPerformanceFetchAtRef.current < MIN_FETCH_INTERVAL_MS) {
+    if (
+      !force &&
+      now - lastPerformanceFetchAtRef.current < MIN_FETCH_INTERVAL_MS
+    ) {
       return;
     }
     if (performanceInFlightRef.current) return;
@@ -130,11 +139,7 @@ const MarketingDashboard = () => {
   }, [queueDashboardRefresh]);
 
   if (isLoading || !marketingStats) {
-    return (
-      <div className="flex h-96 items-center justify-center">
-        <LoadingSpinner text="Loading dashboard..." />
-      </div>
-    );
+    return <DashboardSkeleton />;
   }
 
   const { clientStats, pendingFollowUps, myActivity } = marketingStats;
@@ -306,7 +311,12 @@ const MarketingDashboard = () => {
             Client Status Distribution
           </h3>
           <div className="h-48 min-h-[192px] min-w-0">
-            <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={180}>
+            <ResponsiveContainer
+              width="100%"
+              height="100%"
+              minWidth={0}
+              minHeight={180}
+            >
               <PieChart>
                 <Pie
                   data={statusChartData}
@@ -417,7 +427,10 @@ const MarketingDashboard = () => {
                   </p>
                   <p className="text-xs text-gray-500 dark:text-gray-400">
                     {activity.createdAt
-                      ? format(new Date(activity.createdAt), "MMM d, yyyy h:mm a")
+                      ? format(
+                          new Date(activity.createdAt),
+                          "MMM d, yyyy h:mm a",
+                        )
                       : ""}
                   </p>
                 </div>

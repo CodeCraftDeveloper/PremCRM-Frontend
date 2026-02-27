@@ -66,15 +66,16 @@ const UsersList = () => {
   const [rejectModalOpen, setRejectModalOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
   const [liveStatusMap, setLiveStatusMap] = useState({});
+  const [pendingCount, setPendingCount] = useState(0);
 
   useEffect(() => {
     const params = {
       page: pagination.page,
       limit: pagination.limit,
-      search,
-      role: roleFilter,
-      isActive: statusFilter,
-      approvalStatus: approvalFilter,
+      ...(search ? { search } : {}),
+      ...(roleFilter ? { role: roleFilter } : {}),
+      ...(statusFilter ? { isActive: statusFilter } : {}),
+      ...(approvalFilter ? { approvalStatus: approvalFilter } : {}),
     };
     dispatch(fetchUsers(params));
   }, [
@@ -130,6 +131,20 @@ const UsersList = () => {
       socket.off("marketing:status_changed", handleStatusChanged);
     };
   }, []);
+
+  // Fetch pending approval count for the notification banner
+  useEffect(() => {
+    const fetchPendingCount = async () => {
+      try {
+        const response = await api.get("/users/pending-approvals");
+        const pending = response.data?.data?.users || response.data?.data || [];
+        setPendingCount(Array.isArray(pending) ? pending.length : 0);
+      } catch {
+        // Non-critical — banner just won't show
+      }
+    };
+    fetchPendingCount();
+  }, [users]); // Re-check after any user list change (approve/reject updates users)
 
   const handleDeleteClick = (user) => {
     setSelectedUser(user);
@@ -207,6 +222,26 @@ const UsersList = () => {
 
   return (
     <div className="space-y-6">
+      {/* Pending Approvals Banner */}
+      {pendingCount > 0 && approvalFilter !== "pending" && (
+        <div className="flex items-center justify-between rounded-xl border border-yellow-300 bg-yellow-50 px-4 py-3 dark:border-yellow-700 dark:bg-yellow-900/20">
+          <div className="flex items-center gap-2">
+            <Clock className="h-5 w-5 text-yellow-600 dark:text-yellow-400" />
+            <span className="text-sm font-medium text-yellow-800 dark:text-yellow-300">
+              {pendingCount} user{pendingCount > 1 ? "s" : ""} awaiting approval
+            </span>
+          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setApprovalFilter("pending")}
+            className="border-yellow-400 text-yellow-700 hover:bg-yellow-100 dark:border-yellow-600 dark:text-yellow-300 dark:hover:bg-yellow-900/40"
+          >
+            Review Now
+          </Button>
+        </div>
+      )}
+
       {/* Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>

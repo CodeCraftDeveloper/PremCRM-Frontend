@@ -10,17 +10,23 @@ import {
   Settings,
   ChevronLeft,
   ChevronRight,
+  ChevronDown,
   Building2,
   TrendingUp,
   Target,
   Globe,
   FileSpreadsheet,
+  Workflow,
+  GitBranch,
+  ClipboardList,
+  Layers,
+  Ticket,
 } from "lucide-react";
 import {
   toggleSidebar,
   setMobileSidebarOpen,
 } from "../../store/slices/uiSlice";
-import { connectSocket, getSocket } from "../../services/socket";
+import { useSocketStatus } from "../../hooks";
 
 const Sidebar = ({ role = "admin" }) => {
   const dispatch = useDispatch();
@@ -28,68 +34,132 @@ const Sidebar = ({ role = "admin" }) => {
   const { sidebarCollapsed, mobileSidebarOpen } = useSelector(
     (state) => state.ui,
   );
-  const [isLiveOnline, setIsLiveOnline] = useState(() =>
-    Boolean(getSocket()?.connected),
-  );
+  const user = useSelector((state) => state.auth.user);
+  const socketStatus = useSocketStatus();
+  const isLiveOnline = socketStatus === "connected";
 
-  const adminMenuItems = [
-    { path: "/admin", icon: LayoutDashboard, label: "Dashboard", exact: true },
-    { path: "/admin/users", icon: Users, label: "Users" },
-    { path: "/admin/events", icon: Calendar, label: "Events" },
-    { path: "/admin/clients", icon: Briefcase, label: "Clients" },
-    { path: "/admin/leads", icon: Target, label: "Leads" },
-    { path: "/admin/queries", icon: FileSpreadsheet, label: "Queries" },
-    { path: "/admin/websites", icon: Globe, label: "Websites" },
-    {
-      path: "/admin/marketing/performance",
-      icon: TrendingUp,
-      label: "Team Performance",
-    },
-    { path: "/admin/reports", icon: FileText, label: "Reports" },
-    { path: "/admin/settings", icon: Settings, label: "Settings" },
-  ];
-
-  const marketingMenuItems = [
-    {
-      path: "/marketing",
-      icon: LayoutDashboard,
-      label: "Dashboard",
-      exact: true,
-    },
-    { path: "/marketing/clients", icon: Briefcase, label: "My Clients" },
-    { path: "/marketing/leads", icon: Target, label: "My Leads" },
-    { path: "/marketing/queries", icon: FileSpreadsheet, label: "Queries" },
-    { path: "/marketing/events", icon: Calendar, label: "Events" },
-    { path: "/marketing/settings", icon: Building2, label: "Settings" },
-  ];
-
-  const menuItems = role === "admin" ? adminMenuItems : marketingMenuItems;
-
-  const isActive = (item) => {
-    if (item.exact) {
-      return location.pathname === item.path;
-    }
-    return location.pathname.startsWith(item.path);
-  };
+  // Auto-expand CRM section when navigating to a CRM route
+  const isCrmRoute = location.pathname.includes("/crm/");
+  const [crmExpanded, setCrmExpanded] = useState(isCrmRoute);
 
   useEffect(() => {
-    if (role !== "marketing") return undefined;
-    const socket = getSocket() || connectSocket();
-    if (!socket) return undefined;
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    if (isCrmRoute) setCrmExpanded(true);
+  }, [isCrmRoute]);
 
-    const handleConnect = () => setIsLiveOnline(true);
-    const handleDisconnect = () => setIsLiveOnline(false);
+  const hasPermission = (permission) => {
+    if (!permission) return true;
+    const rolePermissions = user?.permissions || [];
+    if (!Array.isArray(rolePermissions) || rolePermissions.length === 0) {
+      return role === "admin";
+    }
+    return rolePermissions.includes(permission);
+  };
 
-    socket.on("connect", handleConnect);
-    socket.on("disconnect", handleDisconnect);
-    socket.on("connect_error", handleDisconnect);
+  const prefix = role === "admin" ? "/admin" : "/marketing";
 
-    return () => {
-      socket.off("connect", handleConnect);
-      socket.off("disconnect", handleDisconnect);
-      socket.off("connect_error", handleDisconnect);
-    };
-  }, [role]);
+  // --- CRM Section Items ---
+  const crmItems = [
+    {
+      path: `${prefix}/crm/dashboard`,
+      icon: LayoutDashboard,
+      label: "Overview",
+    },
+    {
+      path: `${prefix}/crm/leads`,
+      icon: Target,
+      label: "Leads",
+      permission: "crm.leads.view",
+    },
+    {
+      path: `${prefix}/crm/contacts`,
+      icon: Users,
+      label: "Contacts",
+      permission: "crm.contacts.view",
+    },
+    {
+      path: `${prefix}/crm/accounts`,
+      icon: Building2,
+      label: "Accounts",
+      permission: "crm.accounts.view",
+    },
+    {
+      path: `${prefix}/crm/deals`,
+      icon: Briefcase,
+      label: "Deals",
+      permission: "crm.deals.view",
+    },
+    {
+      path:
+        role === "admin"
+          ? `${prefix}/crm/pipelines`
+          : `${prefix}/crm/deals/kanban`,
+      icon: Layers,
+      label: "Pipeline",
+      permission: "crm.deals.view",
+    },
+    {
+      path: `${prefix}/crm/activities`,
+      icon: ClipboardList,
+      label: "Activities",
+      permission: "crm.activities.view",
+    },
+    ...(role === "admin"
+      ? [
+          {
+            path: `${prefix}/crm/automation`,
+            icon: Workflow,
+            label: "Automation",
+            permission: "crm.automation.manage",
+          },
+          {
+            path: `${prefix}/crm/blueprints`,
+            icon: GitBranch,
+            label: "Blueprints",
+            permission: "crm.blueprints.manage",
+          },
+        ]
+      : []),
+  ].filter((item) => hasPermission(item.permission));
+
+  // --- Core Section Items ---
+  const coreItems = [
+    { path: prefix, icon: LayoutDashboard, label: "Dashboard", exact: true },
+    ...(role === "admin"
+      ? [
+          { path: "/admin/users", icon: Users, label: "Users" },
+          { path: "/admin/events", icon: Calendar, label: "Events" },
+          { path: "/admin/clients", icon: Briefcase, label: "Clients" },
+          { path: "/admin/leads", icon: Target, label: "Leads" },
+          { path: "/admin/tickets", icon: Ticket, label: "Tickets" },
+          { path: "/admin/queries", icon: FileSpreadsheet, label: "Queries" },
+          { path: "/admin/websites", icon: Globe, label: "Websites" },
+          {
+            path: "/admin/marketing/performance",
+            icon: TrendingUp,
+            label: "Team Performance",
+          },
+          { path: "/admin/reports", icon: FileText, label: "Reports" },
+          { path: "/admin/settings", icon: Settings, label: "Settings" },
+        ]
+      : [
+          { path: "/marketing/clients", icon: Briefcase, label: "My Clients" },
+          { path: "/marketing/leads", icon: Target, label: "My Leads" },
+          { path: "/marketing/tickets", icon: Ticket, label: "Tickets" },
+          {
+            path: "/marketing/queries",
+            icon: FileSpreadsheet,
+            label: "Queries",
+          },
+          { path: "/marketing/events", icon: Calendar, label: "Events" },
+          { path: "/marketing/settings", icon: Building2, label: "Settings" },
+        ]),
+  ];
+
+  const isActive = (item) => {
+    if (item.exact) return location.pathname === item.path;
+    return location.pathname.startsWith(item.path);
+  };
 
   useEffect(() => {
     dispatch(setMobileSidebarOpen(false));
@@ -97,33 +167,94 @@ const Sidebar = ({ role = "admin" }) => {
 
   const handleMobileClose = () => dispatch(setMobileSidebarOpen(false));
 
-  const renderNav = (isMobile = false) => (
-    <nav className="mt-4 px-2">
-      <ul className="space-y-1">
-        {menuItems.map((item) => {
-          const Icon = item.icon;
-          const active = isActive(item);
+  const renderNavItem = (item, isMobile = false) => {
+    const Icon = item.icon;
+    const active = isActive(item);
+    return (
+      <li key={item.path}>
+        <Link
+          to={item.path}
+          onClick={isMobile ? handleMobileClose : undefined}
+          className={`flex items-center gap-3 rounded-lg px-3 py-2 transition-colors ${
+            active
+              ? "bg-blue-600 text-white"
+              : "text-gray-300 hover:bg-gray-800 hover:text-white"
+          }`}
+          title={sidebarCollapsed ? item.label : ""}
+        >
+          <Icon className="h-4.5 w-4.5 flex-shrink-0" />
+          {(!sidebarCollapsed || isMobile) && (
+            <span className="text-sm font-medium">{item.label}</span>
+          )}
+        </Link>
+      </li>
+    );
+  };
 
-          return (
-            <li key={item.path}>
-              <Link
-                to={item.path}
-                onClick={isMobile ? handleMobileClose : undefined}
-                className={`flex items-center gap-3 rounded-lg px-3 py-2.5 transition-colors ${
-                  active
-                    ? "bg-blue-600 text-white"
-                    : "text-gray-300 hover:bg-gray-800 hover:text-white"
+  const renderCrmSection = (isMobile = false) => {
+    const showLabels = !sidebarCollapsed || isMobile;
+    const isAnyCrmActive = crmItems.some((item) => isActive(item));
+
+    return (
+      <div className="mt-1">
+        {/* CRM Section Header */}
+        <button
+          type="button"
+          onClick={() => setCrmExpanded((prev) => !prev)}
+          className={`flex w-full items-center gap-3 rounded-lg px-3 py-2 transition-colors ${
+            isAnyCrmActive && !crmExpanded
+              ? "bg-blue-900/40 text-blue-300"
+              : "text-gray-400 hover:bg-gray-800 hover:text-white"
+          }`}
+          title={sidebarCollapsed ? "CRM" : ""}
+        >
+          <TrendingUp className="h-4.5 w-4.5 flex-shrink-0" />
+          {showLabels && (
+            <>
+              <span className="flex-1 text-left text-xs font-semibold uppercase tracking-wider">
+                CRM
+              </span>
+              <ChevronDown
+                className={`h-3.5 w-3.5 transition-transform duration-200 ${
+                  crmExpanded ? "rotate-0" : "-rotate-90"
                 }`}
-                title={sidebarCollapsed ? item.label : ""}
-              >
-                <Icon className="h-5 w-5 flex-shrink-0" />
-                {(!sidebarCollapsed || isMobile) && (
-                  <span className="font-medium">{item.label}</span>
-                )}
-              </Link>
-            </li>
-          );
-        })}
+              />
+            </>
+          )}
+        </button>
+
+        {/* CRM Sub-items */}
+        {(crmExpanded || sidebarCollapsed) && (
+          <ul
+            className={`mt-0.5 space-y-0.5 ${showLabels ? "ml-2 border-l border-gray-700 pl-2" : ""}`}
+          >
+            {crmItems.map((item) => renderNavItem(item, isMobile))}
+          </ul>
+        )}
+      </div>
+    );
+  };
+
+  const renderNav = (isMobile = false) => (
+    <nav className="mt-3 flex-1 overflow-y-auto px-2">
+      {/* Core items */}
+      <ul className="space-y-0.5">
+        {coreItems.slice(0, 1).map((item) => renderNavItem(item, isMobile))}
+        {role === "admin" &&
+          coreItems.slice(1, 2).map((item) => renderNavItem(item, isMobile))}
+      </ul>
+
+      {/* CRM Section (collapsible) */}
+      {renderCrmSection(isMobile)}
+
+      {/* Separator */}
+      <div className="my-2 border-t border-gray-800" />
+
+      {/* Remaining core items */}
+      <ul className="space-y-0.5">
+        {coreItems
+          .slice(role === "admin" ? 2 : 1)
+          .map((item) => renderNavItem(item, isMobile))}
       </ul>
     </nav>
   );

@@ -1,0 +1,10 @@
+export { default as CrmModulePage } from "./CrmModulePage";
+export { default as CrmDetailPage } from "./CrmDetailPage";
+export { default as DealsKanbanPage } from "./DealsKanbanPage";
+export { default as AutomationBuilderPage } from "./AutomationBuilderPage";
+export { default as BlueprintEditorPage } from "./BlueprintEditorPage";
+export { default as AdminCrmDashboard } from "./AdminCrmDashboard";
+export { default as MarketingCrmDashboard } from "./MarketingCrmDashboard";
+export { default as CustomFieldsManager } from "./CustomFieldsManager";
+export { default as LayoutBuilderPage } from "./LayoutBuilderPage";
+export { default as FormBuilderPage } from "./FormBuilderPage";

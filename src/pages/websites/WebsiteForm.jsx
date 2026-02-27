@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate, useParams, Link } from "react-router-dom";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Plus, X } from "lucide-react";
 import {
   createWebsite,
   updateWebsite,
@@ -9,6 +9,7 @@ import {
   clearSelectedWebsite,
 } from "../../store/slices/websitesSlice";
 import { Button, Input, Select, Textarea } from "../../components/ui";
+import FormFieldsBuilder from "./FormFieldsBuilder";
 import toast from "react-hot-toast";
 
 const CATEGORY_OPTIONS = [
@@ -42,7 +43,42 @@ const WebsiteForm = ({ isEdit = false }) => {
     },
     ipWhitelist: "",
     isActive: true,
+    products: [],
+    formFields: [],
+    formConfig: {
+      formTitle: "",
+      formDescription: "",
+      submitButtonText: "Submit",
+      successMessage: "Thank you! We will contact you soon.",
+      redirectUrl: "",
+      theme: {
+        primaryColor: "#4F46E5",
+        backgroundColor: "#FFFFFF",
+        textColor: "#111827",
+        borderRadius: "md",
+        fontSize: "base",
+        labelPosition: "top",
+      },
+      defaultFields: {
+        firstName: { show: true, required: true, label: "First Name" },
+        lastName: { show: true, required: false, label: "Last Name" },
+        email: { show: true, required: true, label: "Email" },
+        phone: { show: true, required: false, label: "Phone" },
+        company: { show: true, required: false, label: "Company" },
+        message: { show: true, required: false, label: "Message" },
+        country: { show: false, required: false, label: "Country" },
+        city: { show: false, required: false, label: "City" },
+        state: { show: false, required: false, label: "State" },
+        zipCode: { show: false, required: false, label: "Zip Code" },
+        productInterest: {
+          show: true,
+          required: false,
+          label: "Product Interest",
+        },
+      },
+    },
   });
+  const [newProduct, setNewProduct] = useState("");
 
   useEffect(() => {
     if (isEdit && id) {
@@ -74,6 +110,35 @@ const WebsiteForm = ({ isEdit = false }) => {
         },
         ipWhitelist: (selectedWebsite.ipWhitelist || []).join(", "),
         isActive: selectedWebsite.isActive ?? true,
+        products: selectedWebsite.products || [],
+        formFields: (selectedWebsite.formFields || []).map((f) => ({
+          fieldName: f.fieldName || "",
+          label: f.label || "",
+          type: f.type || "text",
+          placeholder: f.placeholder || "",
+          description: f.description || "",
+          defaultValue: f.defaultValue ?? "",
+          required: !!f.required,
+          options: f.options || [],
+          validation: f.validation || {},
+          fileConfig: f.fileConfig || {
+            acceptedTypes: "",
+            maxSizeMB: 5,
+            multiple: false,
+          },
+          conditionalLogic: f.conditionalLogic || {
+            enabled: false,
+            action: "show",
+            field: "",
+            operator: "equals",
+            value: "",
+          },
+          width: f.width || "full",
+          cssClass: f.cssClass || "",
+          sortOrder: f.sortOrder ?? 0,
+          isActive: f.isActive !== false,
+        })),
+        formConfig: selectedWebsite.formConfig || {},
       });
     }
   }, [isEdit, selectedWebsite]);
@@ -105,6 +170,31 @@ const WebsiteForm = ({ isEdit = false }) => {
         [name]: type === "checkbox" ? checked : value,
       }));
     }
+  };
+
+  const handleAddProduct = () => {
+    const trimmed = newProduct.trim();
+    if (!trimmed) return;
+    if (formData.products.includes(trimmed)) {
+      toast.error("Product already exists");
+      return;
+    }
+    if (formData.products.length >= 50) {
+      toast.error("Maximum 50 products allowed");
+      return;
+    }
+    setFormData((prev) => ({
+      ...prev,
+      products: [...prev.products, trimmed],
+    }));
+    setNewProduct("");
+  };
+
+  const handleRemoveProduct = (idx) => {
+    setFormData((prev) => ({
+      ...prev,
+      products: prev.products.filter((_, i) => i !== idx),
+    }));
   };
 
   const handleSubmit = async (e) => {
@@ -232,6 +322,81 @@ const WebsiteForm = ({ isEdit = false }) => {
                 rows={2}
               />
             </div>
+          </div>
+
+          {/* Products / Services */}
+          <div className="border-t border-gray-200 pt-6 dark:border-gray-700">
+            <h3 className="mb-2 text-lg font-semibold text-gray-900 dark:text-white">
+              Products / Services
+            </h3>
+            <p className="mb-4 text-xs text-gray-500 dark:text-gray-400">
+              Add your products or services. These will appear as a dropdown in
+              lead forms so visitors can select what they&apos;re interested in.
+            </p>
+
+            <div className="flex gap-2">
+              <Input
+                placeholder="e.g. Enterprise Plan, Consulting, Web Design..."
+                value={newProduct}
+                onChange={(e) => setNewProduct(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    e.preventDefault();
+                    handleAddProduct();
+                  }
+                }}
+                className="flex-1"
+              />
+              <Button
+                type="button"
+                variant="outline"
+                onClick={handleAddProduct}
+              >
+                <Plus className="mr-1 h-4 w-4" />
+                Add
+              </Button>
+            </div>
+
+            {formData.products.length > 0 && (
+              <div className="mt-3 flex flex-wrap gap-2">
+                {formData.products.map((product, idx) => (
+                  <span
+                    key={idx}
+                    className="inline-flex items-center gap-1 rounded-full bg-indigo-50 px-3 py-1 text-sm font-medium text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-300"
+                  >
+                    {product}
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveProduct(idx)}
+                      className="ml-1 rounded-full p-0.5 text-indigo-400 hover:bg-indigo-100 hover:text-indigo-600 dark:hover:bg-indigo-800"
+                    >
+                      <X className="h-3.5 w-3.5" />
+                    </button>
+                  </span>
+                ))}
+              </div>
+            )}
+
+            {formData.products.length === 0 && (
+              <p className="mt-2 text-sm italic text-gray-400 dark:text-gray-500">
+                No products added yet. The &quot;Product Interest&quot; field
+                will be a free-text input in lead forms.
+              </p>
+            )}
+          </div>
+
+          {/* Custom Form Fields Builder */}
+          <div className="border-t border-gray-200 pt-6 dark:border-gray-700">
+            <FormFieldsBuilder
+              fields={formData.formFields}
+              onChange={(updatedFields) =>
+                setFormData((prev) => ({ ...prev, formFields: updatedFields }))
+              }
+              formConfig={formData.formConfig}
+              onFormConfigChange={(updatedConfig) =>
+                setFormData((prev) => ({ ...prev, formConfig: updatedConfig }))
+              }
+            />
           </div>
 
           {/* Duplicate Detection */}

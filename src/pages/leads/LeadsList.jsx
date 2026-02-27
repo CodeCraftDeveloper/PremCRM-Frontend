@@ -27,7 +27,7 @@ import {
   SearchInput,
   Select,
   Pagination,
-  LoadingSpinner,
+  ListSkeleton,
   EmptyState,
   Modal,
 } from "../../components/ui";
@@ -78,8 +78,8 @@ const LeadsList = ({ isAdmin = true }) => {
 
   useEffect(() => {
     dispatch(fetchWebsites({ limit: 100 }));
-    dispatch(fetchUnassignedCount());
     if (isAdmin) {
+      dispatch(fetchUnassignedCount());
       dispatch(fetchMarketingUsers());
     }
   }, [dispatch, isAdmin]);
@@ -141,7 +141,7 @@ const LeadsList = ({ isAdmin = true }) => {
       );
       setAutoAssignModalOpen(false);
       dispatch(fetchLeads({ page: 1, limit: pagination.limit, ...filters }));
-      dispatch(fetchUnassignedCount());
+      if (isAdmin) dispatch(fetchUnassignedCount());
     } catch (error) {
       toast.error(error || "Failed to auto-assign leads");
     }
@@ -158,7 +158,7 @@ const LeadsList = ({ isAdmin = true }) => {
   }));
 
   if (isLoading && leadsList.length === 0) {
-    return <LoadingSpinner />;
+    return <ListSkeleton />;
   }
 
   return (
@@ -171,7 +171,7 @@ const LeadsList = ({ isAdmin = true }) => {
           </h1>
           <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
             {pagination.total} total leads
-            {unassignedCount > 0 && (
+            {isAdmin && unassignedCount > 0 && (
               <span className="ml-2 text-amber-600 dark:text-amber-400">
                 • {unassignedCount} unassigned
               </span>
@@ -179,16 +179,14 @@ const LeadsList = ({ isAdmin = true }) => {
           </p>
         </div>
         <div className="flex gap-2">
-          <Link
-            to={
-              isAdmin ? "/admin/leads/analytics" : "/marketing/leads/analytics"
-            }
-          >
-            <Button variant="outline" size="sm">
-              <BarChart3 className="mr-2 h-4 w-4" />
-              Analytics
-            </Button>
-          </Link>
+          {isAdmin && (
+            <Link to="/admin/leads/analytics">
+              <Button variant="outline" size="sm">
+                <BarChart3 className="mr-2 h-4 w-4" />
+                Analytics
+              </Button>
+            </Link>
+          )}
           {isAdmin && unassignedCount > 0 && (
             <Button
               variant="outline"
