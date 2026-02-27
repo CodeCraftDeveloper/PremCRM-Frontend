@@ -860,10 +860,18 @@ function App() {
         />
         <Route
           path="/404"
-          element={<div className="p-8 text-center">404 - Page not found</div>}
+          element={
+            <div className="flex flex-col items-center justify-center min-h-screen p-8 text-center">
+              <h1 className="text-6xl font-bold text-gray-300 mb-4">404</h1>
+              <p className="text-xl text-gray-500 mb-6">Page not found</p>
+              <a href="/login" className="text-blue-600 hover:underline">
+                Go to Login
+              </a>
+            </div>
+          }
         />
         <Route path="/" element={<Navigate to="/login" replace />} />
-        <Route path="*" element={<Navigate to="/login" replace />} />
+        <Route path="*" element={<Navigate to="/404" replace />} />
       </Routes>
     </>
   );
