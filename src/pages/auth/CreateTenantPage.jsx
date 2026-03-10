@@ -15,6 +15,11 @@ const createTenantSchema = z.object({
     .regex(/^[a-z0-9-]+$/, "Use lowercase letters, numbers, and hyphens only"),
   companyName: z.string().optional(),
   companyRef: z.string().optional(),
+  companyLogoUrl: z
+    .string()
+    .url("Enter a valid logo URL")
+    .optional()
+    .or(z.literal("")),
   adminName: z.string().min(2, "Admin name must be at least 2 characters"),
   adminEmail: z.string().email("Please enter a valid admin email"),
   adminPassword: z.string().min(8, "Password must be at least 8 characters"),
@@ -35,6 +40,7 @@ const CreateTenantPage = () => {
       slug: "",
       companyName: "",
       companyRef: "",
+      companyLogoUrl: "",
       adminName: "",
       adminEmail: "",
       adminPassword: "",
@@ -48,6 +54,7 @@ const CreateTenantPage = () => {
         ...data,
         companyName: data.companyName || undefined,
         companyRef: data.companyRef || undefined,
+        companyLogoUrl: data.companyLogoUrl || undefined,
       });
       toast.success("Tenant created and linked successfully");
       navigate("/admin");
@@ -109,6 +116,15 @@ const CreateTenantPage = () => {
               <input className="h-full w-full rounded-r-lg bg-transparent px-3 text-sm text-white placeholder:text-slate-500 focus:outline-none" placeholder="COMP-001" {...register("companyRef")} />
             </div>
             {errors.companyRef && <p className="mt-1 text-xs text-red-400">{errors.companyRef.message}</p>}
+          </div>
+
+          <div className="md:col-span-2">
+            <label className="mb-2 block text-sm font-medium text-slate-100">Company Logo URL</label>
+            <div className={`flex h-11 items-center rounded-lg border bg-slate-950 ${errors.companyLogoUrl ? "border-red-500" : "border-slate-700"}`}>
+              <Building2 className="ml-3 h-4 w-4 text-slate-400" />
+              <input className="h-full w-full rounded-r-lg bg-transparent px-3 text-sm text-white placeholder:text-slate-500 focus:outline-none" placeholder="https://example.com/logo.png" {...register("companyLogoUrl")} />
+            </div>
+            {errors.companyLogoUrl && <p className="mt-1 text-xs text-red-400">{errors.companyLogoUrl.message}</p>}
           </div>
 
           <div>

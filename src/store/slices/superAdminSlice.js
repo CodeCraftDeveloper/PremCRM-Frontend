@@ -129,6 +129,22 @@ export const changeUserRole = createAsyncThunk(
   },
 );
 
+export const changeUserPassword = createAsyncThunk(
+  "superAdmin/changeUserPassword",
+  async ({ id, newPassword }, { rejectWithValue }) => {
+    try {
+      const res = await api.put(`/superadmin/users/${id}/password`, {
+        newPassword,
+      });
+      return res.data.data;
+    } catch (err) {
+      return rejectWithValue(
+        err.response?.data?.message || "Failed to change password",
+      );
+    }
+  },
+);
+
 export const fetchPlatformActivity = createAsyncThunk(
   "superAdmin/fetchPlatformActivity",
   async (params = {}, { rejectWithValue }) => {

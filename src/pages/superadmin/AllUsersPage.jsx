@@ -11,13 +11,16 @@ import {
   Shield,
   User,
   Building2,
+  KeyRound,
 } from "lucide-react";
 import toast from "react-hot-toast";
 import {
   fetchAllUsers,
   toggleUserActive,
   changeUserRole,
+  changeUserPassword,
 } from "../../store/slices/superAdminSlice";
+import { Button, Input, Modal } from "../../components/ui";
 
 const RoleIcon = ({ role }) => {
   if (role === "admin") return <Crown className="h-3.5 w-3.5 text-amber-400" />;
@@ -36,6 +39,10 @@ const AllUsersPage = () => {
   const [roleFilter, setRoleFilter] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
   const [page, setPage] = useState(1);
+  const [passwordUser, setPasswordUser] = useState(null);
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [isUpdatingPassword, setIsUpdatingPassword] = useState(false);
 
   useEffect(() => {
     const params = { page, limit: 25 };
@@ -60,6 +67,48 @@ const AllUsersPage = () => {
       toast.success("Role updated");
     } catch (err) {
       toast.error(err);
+    }
+  };
+
+  const openPasswordModal = (user) => {
+    setPasswordUser(user);
+    setNewPassword("");
+    setConfirmPassword("");
+  };
+
+  const closePasswordModal = () => {
+    setPasswordUser(null);
+    setNewPassword("");
+    setConfirmPassword("");
+  };
+
+  const handlePasswordUpdate = async () => {
+    if (!passwordUser?._id) return;
+
+    if (!newPassword || newPassword.length < 8) {
+      toast.error("Password must be at least 8 characters");
+      return;
+    }
+
+    if (newPassword !== confirmPassword) {
+      toast.error("Passwords do not match");
+      return;
+    }
+
+    setIsUpdatingPassword(true);
+    try {
+      await dispatch(
+        changeUserPassword({
+          id: passwordUser._id,
+          newPassword,
+        }),
+      ).unwrap();
+      toast.success("User password changed successfully");
+      closePasswordModal();
+    } catch (err) {
+      toast.error(err || "Failed to change password");
+    } finally {
+      setIsUpdatingPassword(false);
     }
   };
 
@@ -159,6 +208,7 @@ const AllUsersPage = () => {
               <th className="px-4 py-3 text-slate-400 font-medium">Tenant</th>
               <th className="px-4 py-3 text-slate-400 font-medium">Role</th>
               <th className="px-4 py-3 text-slate-400 font-medium">Status</th>
+              <th className="px-4 py-3 text-slate-400 font-medium">Actions</th>
               <th className="px-4 py-3 text-slate-400 font-medium">Joined</th>
             </tr>
           </thead>
@@ -166,7 +216,7 @@ const AllUsersPage = () => {
             {isLoading && regularUsers.length === 0 ? (
               <tr>
                 <td
-                  colSpan={6}
+                  colSpan={7}
                   className="px-4 py-12 text-center text-slate-500"
                 >
                   Loading...
@@ -175,7 +225,7 @@ const AllUsersPage = () => {
             ) : regularUsers.length === 0 ? (
               <tr>
                 <td
-                  colSpan={6}
+                  colSpan={7}
                   className="px-4 py-12 text-center text-slate-500"
                 >
                   No non-owner users found
@@ -244,6 +294,19 @@ const AllUsersPage = () => {
                       </button>
                     )}
                   </td>
+                  <td className="px-4 py-3">
+                    {u.role === "superadmin" ? (
+                      <span className="text-xs text-slate-500">—</span>
+                    ) : (
+                      <button
+                        onClick={() => openPasswordModal(u)}
+                        className="inline-flex items-center gap-1 rounded-md border border-slate-600 px-2 py-1 text-xs text-slate-200 transition hover:bg-slate-700"
+                      >
+                        <KeyRound className="h-3.5 w-3.5" />
+                        Set Password
+                      </button>
+                    )}
+                  </td>
                   <td className="px-4 py-3 text-slate-400 text-xs">
                     {u.createdAt
                       ? new Date(u.createdAt).toLocaleDateString()
@@ -281,6 +344,42 @@ const AllUsersPage = () => {
           </div>
         </div>
       )}
+
+      <Modal
+        isOpen={!!passwordUser}
+        onClose={closePasswordModal}
+        title="Set User Password"
+        size="md"
+      >
+        <div className="space-y-4">
+          <p className="text-sm text-slate-600 dark:text-slate-300">
+            Set a new password for{" "}
+            <span className="font-semibold">{passwordUser?.email}</span>.
+          </p>
+          <Input
+            label="New Password"
+            type="password"
+            value={newPassword}
+            onChange={(e) => setNewPassword(e.target.value)}
+            placeholder="Minimum 8 characters"
+          />
+          <Input
+            label="Confirm New Password"
+            type="password"
+            value={confirmPassword}
+            onChange={(e) => setConfirmPassword(e.target.value)}
+            placeholder="Re-enter password"
+          />
+          <div className="flex justify-end gap-2 pt-2">
+            <Button variant="secondary" onClick={closePasswordModal}>
+              Cancel
+            </Button>
+            <Button onClick={handlePasswordUpdate} loading={isUpdatingPassword}>
+              Update Password
+            </Button>
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 };

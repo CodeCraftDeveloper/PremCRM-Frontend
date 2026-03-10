@@ -37,6 +37,9 @@ const Sidebar = ({ role = "admin" }) => {
   const user = useSelector((state) => state.auth.user);
   const socketStatus = useSocketStatus();
   const isLiveOnline = socketStatus === "connected";
+  const companyLogo = user?.tenantCompany?.logoUrl || "/logo.png";
+  const companyName =
+    user?.tenantCompany?.name || user?.tenantName || "Company Logo";
 
   // Auto-expand CRM section when navigating to a CRM route
   const isCrmRoute = location.pathname.includes("/crm/");
@@ -276,12 +279,20 @@ const Sidebar = ({ role = "admin" }) => {
         }`}
       >
         <div className="flex h-16 items-center justify-between border-b border-gray-800 px-4">
-          <div className="rounded-lg bg-white px-2 py-1.5">
-            <img
-              src="/logo.png"
-              alt="Prem Industries India Limited"
-              className="h-10 w-auto max-w-[190px] object-contain"
-            />
+          <div className="flex items-center gap-2 min-w-0">
+            <div className="rounded-lg bg-white px-2 py-1.5">
+              <img
+                src={companyLogo}
+                alt={companyName}
+                onError={(e) => {
+                  e.currentTarget.src = "/logo.png";
+                }}
+                className="h-10 w-auto max-w-[90px] object-contain"
+              />
+            </div>
+            <p className="truncate text-xs font-medium text-gray-200 max-w-[120px]">
+              {companyName}
+            </p>
           </div>
           <button
             onClick={handleMobileClose}
@@ -301,14 +312,24 @@ const Sidebar = ({ role = "admin" }) => {
       >
         {/* Logo */}
         <div className="flex h-16 items-center justify-between border-b border-gray-800 px-4">
-          <div
-            className={`${sidebarCollapsed ? "p-1.5" : "px-2 py-1.5"} rounded-lg bg-white`}
-          >
-            <img
-              src="/logo.png"
-              alt="Prem Industries India Limited"
-              className={`${sidebarCollapsed ? "h-8 w-8 object-contain" : "h-10 w-auto max-w-[190px] object-contain"}`}
-            />
+          <div className="flex items-center gap-2 min-w-0">
+            <div
+              className={`${sidebarCollapsed ? "p-1.5" : "px-2 py-1.5"} rounded-lg bg-white`}
+            >
+              <img
+                src={companyLogo}
+                alt={companyName}
+                onError={(e) => {
+                  e.currentTarget.src = "/logo.png";
+                }}
+                className={`${sidebarCollapsed ? "h-8 w-8 object-contain" : "h-10 w-auto max-w-[130px] object-contain"}`}
+              />
+            </div>
+            {!sidebarCollapsed && (
+              <p className="truncate text-xs font-medium text-gray-200 max-w-[92px]">
+                {companyName}
+              </p>
+            )}
           </div>
           <button
             onClick={() => dispatch(toggleSidebar())}

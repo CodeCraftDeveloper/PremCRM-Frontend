@@ -1,13 +1,18 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { User, Lock, Bell, Palette, Shield } from "lucide-react";
-import { changePassword, updateProfile } from "../../store/slices/authSlice";
+import {
+  changePassword,
+  getMe,
+  updateProfile,
+} from "../../store/slices/authSlice";
 import { setTheme } from "../../store/slices/uiSlice";
 import { Button, Input } from "../../components/ui";
 import toast from "react-hot-toast";
+import api from "../../services/api";
 
 const profileSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters"),
@@ -35,6 +40,30 @@ const Settings = () => {
   const [activeTab, setActiveTab] = useState("profile");
   const [isUpdatingProfile, setIsUpdatingProfile] = useState(false);
   const [isChangingPassword, setIsChangingPassword] = useState(false);
+  const [isUpdatingBranding, setIsUpdatingBranding] = useState(false);
+  const [companyName, setCompanyName] = useState(user?.tenantCompany?.name || "");
+  const [companyLogoUrl, setCompanyLogoUrl] = useState(
+    user?.tenantCompany?.logoUrl || "",
+  );
+  const [companyLogoFile, setCompanyLogoFile] = useState(null);
+  const [companyLogoPreview, setCompanyLogoPreview] = useState("");
+
+  useEffect(() => {
+    setCompanyName(user?.tenantCompany?.name || "");
+    setCompanyLogoUrl(user?.tenantCompany?.logoUrl || "");
+  }, [user?.tenantCompany?.name, user?.tenantCompany?.logoUrl]);
+
+  useEffect(() => {
+    if (!companyLogoFile) {
+      setCompanyLogoPreview("");
+      return undefined;
+    }
+    const previewUrl = URL.createObjectURL(companyLogoFile);
+    setCompanyLogoPreview(previewUrl);
+    return () => {
+      URL.revokeObjectURL(previewUrl);
+    };
+  }, [companyLogoFile]);
 
   const {
     register: registerProfile,
@@ -99,7 +128,58 @@ const Settings = () => {
     { id: "security", label: "Security", icon: Lock },
     { id: "notifications", label: "Notifications", icon: Bell },
     { id: "appearance", label: "Appearance", icon: Palette },
+    ...(user?.role === "admin"
+      ? [{ id: "branding", label: "Branding", icon: Shield }]
+      : []),
   ];
+
+  const onBrandingSubmit = async (e) => {
+    e.preventDefault();
+
+    if (!user?.tenantId) {
+      toast.error("Tenant context missing");
+      return;
+    }
+
+    if (companyLogoUrl && !/^https?:\/\/.+/i.test(companyLogoUrl.trim())) {
+      toast.error("Please enter a valid logo URL");
+      return;
+    }
+
+    setIsUpdatingBranding(true);
+    try {
+      let resolvedLogoUrl = companyLogoUrl?.trim() || undefined;
+
+      if (companyLogoFile) {
+        const formData = new FormData();
+        formData.append("logo", companyLogoFile);
+        const uploadRes = await api.post(
+          `/tenants/${user.tenantId}/company-logo`,
+          formData,
+          {
+            headers: { "Content-Type": "multipart/form-data" },
+          },
+        );
+        resolvedLogoUrl = uploadRes?.data?.data?.logoUrl || resolvedLogoUrl;
+      }
+
+      await api.put(`/tenants/${user.tenantId}`, {
+        company: {
+          name: companyName?.trim() || undefined,
+          logoUrl: resolvedLogoUrl,
+        },
+      });
+      await dispatch(getMe()).unwrap();
+      setCompanyLogoFile(null);
+      toast.success("Company branding updated successfully");
+    } catch (error) {
+      toast.error(
+        error?.response?.data?.message || "Failed to update company branding",
+      );
+    } finally {
+      setIsUpdatingBranding(false);
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -382,6 +462,73 @@ const Settings = () => {
                   </label>
                 </div>
               </div>
+            </div>
+          )}
+
+          {/* Branding Tab (Admin only) */}
+          {activeTab === "branding" && user?.role === "admin" && (
+            <div className="rounded-xl border border-gray-200 bg-white p-6 dark:border-gray-700 dark:bg-gray-800">
+              <div className="mb-6">
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                  Company Branding
+                </h3>
+                <p className="text-sm text-gray-500 dark:text-gray-400">
+                  Update company name and logo shown in the sidebar
+                </p>
+              </div>
+
+              <form onSubmit={onBrandingSubmit} className="space-y-4">
+                <Input
+                  label="Company Name"
+                  value={companyName}
+                  onChange={(e) => setCompanyName(e.target.value)}
+                  placeholder="Acme Pvt Ltd"
+                />
+                <Input
+                  label="Company Logo URL"
+                  value={companyLogoUrl}
+                  onChange={(e) => setCompanyLogoUrl(e.target.value)}
+                  placeholder="https://example.com/logo.png"
+                />
+                <div>
+                  <label className="mb-1.5 block text-sm font-medium text-slate-700 dark:text-slate-200">
+                    Upload Company Logo
+                  </label>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) =>
+                      setCompanyLogoFile(e.target.files?.[0] || null)
+                    }
+                    className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 shadow-sm transition-all duration-200 file:mr-3 file:rounded-md file:border-0 file:bg-blue-600 file:px-3 file:py-1.5 file:text-white hover:border-slate-400 dark:border-slate-600 dark:bg-slate-800 dark:text-white dark:hover:border-slate-500"
+                  />
+                  <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                    Choose a logo image to replace the current logo.
+                  </p>
+                </div>
+
+                <div className="rounded-lg border border-gray-200 p-3 dark:border-gray-700">
+                  <p className="mb-2 text-xs text-gray-500 dark:text-gray-400">
+                    Logo Preview
+                  </p>
+                  <div className="inline-flex rounded-lg bg-white p-2">
+                    <img
+                      src={companyLogoPreview || companyLogoUrl || "/logo.png"}
+                      alt={companyName || "Company Logo"}
+                      onError={(e) => {
+                        e.currentTarget.src = "/logo.png";
+                      }}
+                      className="h-10 w-auto max-w-[190px] object-contain"
+                    />
+                  </div>
+                </div>
+
+                <div className="flex justify-end pt-4">
+                  <Button type="submit" loading={isUpdatingBranding}>
+                    Save Branding
+                  </Button>
+                </div>
+              </form>
             </div>
           )}
         </div>
