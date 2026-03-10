@@ -113,7 +113,9 @@ api.interceptors.response.use(
     }
 
     // ── 403 — Forbidden (RBAC) ───────────────────────────────
-    if (status === 403) {
+    // Suppress duplicate toast for auth endpoints – the 401 handler already
+    // shows "Session expired" when refresh fails.
+    if (status === 403 && !isAuthEndpoint) {
       toast.error(
         message || "You don't have permission to perform this action.",
       );
