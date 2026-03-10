@@ -37,18 +37,52 @@ const Sidebar = ({ role = "admin" }) => {
   const user = useSelector((state) => state.auth.user);
   const socketStatus = useSocketStatus();
   const isLiveOnline = socketStatus === "connected";
-  const companyLogo = user?.tenantCompany?.logoUrl || "/logo.png";
+  const [failedLogoSrc, setFailedLogoSrc] = useState("");
+  const logoUpdatedAt = user?.tenantCompany?.logoUpdatedAt;
+  const logoVersion = logoUpdatedAt ? new Date(logoUpdatedAt).getTime() : "";
+  const apiBaseUrl =
+    import.meta.env.VITE_API_URL || "http://localhost:5000/api/v1";
+  const rawLogoUrl = user?.tenantCompany?.logoUrl || "";
+  const isS3Logo = Boolean(
+    user?.tenantCompany?.logoS3Key ||
+    rawLogoUrl.includes(".s3.") ||
+    rawLogoUrl.includes("s3.amazonaws.com"),
+  );
+  const companyLogo = isS3Logo && user?.tenantId
+    ? `${apiBaseUrl}/tenants/${user.tenantId}/company-logo/public${logoVersion ? `?v=${logoVersion}` : ""}`
+    : rawLogoUrl
+      ? `${rawLogoUrl}${rawLogoUrl.includes("?") ? "&" : "?"}v=${logoVersion || "0"}`
+      : "";
   const companyName =
     user?.tenantCompany?.name || user?.tenantName || "Company Logo";
 
+  const companyInitial = (companyName || "C").charAt(0).toUpperCase();
+
+  const renderCompanyLogo = (className) => {
+    if (companyLogo && companyLogo !== failedLogoSrc) {
+      return (
+        <img
+          src={companyLogo}
+          alt={companyName}
+          onError={() => {
+            setFailedLogoSrc(companyLogo);
+          }}
+          className={className}
+          key={`logo-${logoVersion || "na"}`}
+        />
+      );
+    }
+
+    return (
+      <div className="flex h-10 w-10 items-center justify-center rounded-md bg-slate-200 text-sm font-bold text-slate-700">
+        {companyInitial}
+      </div>
+    );
+  };
+
   // Auto-expand CRM section when navigating to a CRM route
   const isCrmRoute = location.pathname.includes("/crm/");
-  const [crmExpanded, setCrmExpanded] = useState(isCrmRoute);
-
-  useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    if (isCrmRoute) setCrmExpanded(true);
-  }, [isCrmRoute]);
+  const [crmExpanded, setCrmExpanded] = useState(false);
 
   const hasPermission = (permission) => {
     if (!permission) return true;
@@ -196,6 +230,7 @@ const Sidebar = ({ role = "admin" }) => {
 
   const renderCrmSection = (isMobile = false) => {
     const showLabels = !sidebarCollapsed || isMobile;
+    const effectiveCrmExpanded = isCrmRoute || crmExpanded;
     const isAnyCrmActive = crmItems.some((item) => isActive(item));
 
     return (
@@ -205,7 +240,7 @@ const Sidebar = ({ role = "admin" }) => {
           type="button"
           onClick={() => setCrmExpanded((prev) => !prev)}
           className={`flex w-full items-center gap-3 rounded-lg px-3 py-2 transition-colors ${
-            isAnyCrmActive && !crmExpanded
+            isAnyCrmActive && !effectiveCrmExpanded
               ? "bg-blue-900/40 text-blue-300"
               : "text-gray-400 hover:bg-gray-800 hover:text-white"
           }`}
@@ -219,7 +254,7 @@ const Sidebar = ({ role = "admin" }) => {
               </span>
               <ChevronDown
                 className={`h-3.5 w-3.5 transition-transform duration-200 ${
-                  crmExpanded ? "rotate-0" : "-rotate-90"
+                  effectiveCrmExpanded ? "rotate-0" : "-rotate-90"
                 }`}
               />
             </>
@@ -227,7 +262,7 @@ const Sidebar = ({ role = "admin" }) => {
         </button>
 
         {/* CRM Sub-items */}
-        {(crmExpanded || sidebarCollapsed) && (
+        {(effectiveCrmExpanded || sidebarCollapsed) && (
           <ul
             className={`mt-0.5 space-y-0.5 ${showLabels ? "ml-2 border-l border-gray-700 pl-2" : ""}`}
           >
@@ -269,28 +304,29 @@ const Sidebar = ({ role = "admin" }) => {
           type="button"
           aria-label="Close sidebar overlay"
           onClick={handleMobileClose}
-          className="fixed inset-0 z-40 bg-black/50 md:hidden"
+          className="fixed inset-0 z-40 bg-black/50 lg:hidden"
         />
       )}
 
       <aside
-        className={`fixed left-0 top-0 z-50 h-screen w-64 bg-gray-900 text-white transition-transform duration-300 md:hidden ${
+        className={`fixed left-0 top-0 z-50 h-screen w-64 bg-gray-900 text-white transition-transform duration-300 lg:hidden ${
           mobileSidebarOpen ? "translate-x-0" : "-translate-x-full"
         }`}
       >
         <div className="flex h-16 items-center justify-between border-b border-gray-800 px-4">
-          <div className="flex items-center gap-2 min-w-0">
+          <div className="flex min-w-0 flex-1 items-center gap-2 pr-2">
             <div className="rounded-lg bg-white px-2 py-1.5">
-              <img
-                src={companyLogo}
-                alt={companyName}
-                onError={(e) => {
-                  e.currentTarget.src = "/logo.png";
-                }}
-                className="h-10 w-auto max-w-[90px] object-contain"
-              />
+              {renderCompanyLogo("h-10 w-auto max-w-[120px] object-contain")}
             </div>
-            <p className="truncate text-xs font-medium text-gray-200 max-w-[120px]">
+            <p
+              title={companyName}
+              className="min-w-0 flex-1 overflow-hidden text-sm font-semibold leading-tight text-gray-100"
+              style={{
+                display: "-webkit-box",
+                WebkitLineClamp: 2,
+                WebkitBoxOrient: "vertical",
+              }}
+            >
               {companyName}
             </p>
           </div>
@@ -306,27 +342,32 @@ const Sidebar = ({ role = "admin" }) => {
       </aside>
 
       <aside
-        className={`fixed left-0 top-0 z-40 hidden h-screen bg-gray-900 text-white transition-all duration-300 md:flex md:flex-col ${
+        className={`fixed left-0 top-0 z-40 hidden h-screen bg-gray-900 text-white transition-all duration-300 lg:flex lg:flex-col ${
           sidebarCollapsed ? "w-16" : "w-64"
         }`}
       >
         {/* Logo */}
         <div className="flex h-16 items-center justify-between border-b border-gray-800 px-4">
-          <div className="flex items-center gap-2 min-w-0">
+          <div className="flex min-w-0 flex-1 items-center gap-2 pr-2">
             <div
               className={`${sidebarCollapsed ? "p-1.5" : "px-2 py-1.5"} rounded-lg bg-white`}
             >
-              <img
-                src={companyLogo}
-                alt={companyName}
-                onError={(e) => {
-                  e.currentTarget.src = "/logo.png";
-                }}
-                className={`${sidebarCollapsed ? "h-8 w-8 object-contain" : "h-10 w-auto max-w-[130px] object-contain"}`}
-              />
+              {renderCompanyLogo(
+                sidebarCollapsed
+                  ? "h-8 w-8 object-contain"
+                  : "h-10 w-auto max-w-[112px] object-contain",
+              )}
             </div>
             {!sidebarCollapsed && (
-              <p className="truncate text-xs font-medium text-gray-200 max-w-[92px]">
+              <p
+                title={companyName}
+                className="min-w-0 flex-1 overflow-hidden text-sm font-semibold leading-tight text-gray-100"
+                style={{
+                  display: "-webkit-box",
+                  WebkitLineClamp: 2,
+                  WebkitBoxOrient: "vertical",
+                }}
+              >
                 {companyName}
               </p>
             )}

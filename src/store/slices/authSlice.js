@@ -22,7 +22,7 @@ export const login = createAsyncThunk(
     } catch (error) {
       return rejectWithValue(error.response?.data?.message || "Login failed");
     }
-  }
+  },
 );
 
 export const logout = createAsyncThunk("auth/logout", async () => {
@@ -43,10 +43,25 @@ export const getMe = createAsyncThunk(
       return user;
     } catch (error) {
       return rejectWithValue(
-        error.response?.data?.message || "Failed to get user"
+        error.response?.data?.message || "Failed to get user",
       );
     }
-  }
+  },
+);
+
+export const refreshUserSession = createAsyncThunk(
+  "auth/refreshUserSession",
+  async (_, { rejectWithValue }) => {
+    try {
+      const response = await apiClient.post("/auth/refresh-session");
+      const { user } = response.data.data;
+      return user;
+    } catch (error) {
+      return rejectWithValue(
+        error.response?.data?.message || "Failed to refresh session",
+      );
+    }
+  },
 );
 
 export const updateProfile = createAsyncThunk(
@@ -58,10 +73,10 @@ export const updateProfile = createAsyncThunk(
       return user;
     } catch (error) {
       return rejectWithValue(
-        error.response?.data?.message || "Failed to update profile"
+        error.response?.data?.message || "Failed to update profile",
       );
     }
-  }
+  },
 );
 
 export const changePassword = createAsyncThunk(
@@ -72,10 +87,10 @@ export const changePassword = createAsyncThunk(
       return true;
     } catch (error) {
       return rejectWithValue(
-        error.response?.data?.message || "Failed to change password"
+        error.response?.data?.message || "Failed to change password",
       );
     }
-  }
+  },
 );
 
 const authSlice = createSlice({
@@ -149,6 +164,18 @@ const authSlice = createSlice({
       .addCase(changePassword.rejected, (state, action) => {
         state.isLoading = false;
         state.error = action.payload;
+      })
+      // Refresh User Session
+      .addCase(refreshUserSession.pending, () => {
+        // Don't set loading for silent refresh
+      })
+      .addCase(refreshUserSession.fulfilled, (state, action) => {
+        state.user = action.payload;
+        state.isAuthenticated = true;
+      })
+      .addCase(refreshUserSession.rejected, (state, action) => {
+        // Don't update error state for silent refresh failures
+        console.warn("Session refresh failed:", action.payload);
       });
   },
 });

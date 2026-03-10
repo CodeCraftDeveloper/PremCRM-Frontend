@@ -1,11 +1,13 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { useDispatch } from "react-redux";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Building2, Mail, Lock, User, Building, Fingerprint } from "lucide-react";
 import toast from "react-hot-toast";
 import api from "../../services/api";
+import { getMe } from "../../store/slices/authSlice";
 
 const createTenantSchema = z.object({
   tenantName: z.string().min(2, "Tenant name must be at least 2 characters"),
@@ -15,19 +17,16 @@ const createTenantSchema = z.object({
     .regex(/^[a-z0-9-]+$/, "Use lowercase letters, numbers, and hyphens only"),
   companyName: z.string().optional(),
   companyRef: z.string().optional(),
-  companyLogoUrl: z
-    .string()
-    .url("Enter a valid logo URL")
-    .optional()
-    .or(z.literal("")),
   adminName: z.string().min(2, "Admin name must be at least 2 characters"),
   adminEmail: z.string().email("Please enter a valid admin email"),
   adminPassword: z.string().min(8, "Password must be at least 8 characters"),
 });
 
 const CreateTenantPage = () => {
+  const dispatch = useDispatch();
   const navigate = useNavigate();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [companyLogoFile, setCompanyLogoFile] = useState(null);
 
   const {
     register,
@@ -40,7 +39,6 @@ const CreateTenantPage = () => {
       slug: "",
       companyName: "",
       companyRef: "",
-      companyLogoUrl: "",
       adminName: "",
       adminEmail: "",
       adminPassword: "",
@@ -50,12 +48,21 @@ const CreateTenantPage = () => {
   const onSubmit = async (data) => {
     setIsSubmitting(true);
     try {
-      await api.post("/tenants/bootstrap", {
+      const bootstrapRes = await api.post("/tenants/bootstrap", {
         ...data,
         companyName: data.companyName || undefined,
         companyRef: data.companyRef || undefined,
-        companyLogoUrl: data.companyLogoUrl || undefined,
       });
+
+      const tenantId = bootstrapRes?.data?.data?.tenant?.id;
+      if (tenantId && companyLogoFile) {
+        const formData = new FormData();
+        formData.append("logo", companyLogoFile);
+        await api.post(`/tenants/${tenantId}/company-logo`, formData);
+      }
+
+      await dispatch(getMe()).unwrap();
+
       toast.success("Tenant created and linked successfully");
       navigate("/admin");
     } catch (error) {
@@ -119,12 +126,18 @@ const CreateTenantPage = () => {
           </div>
 
           <div className="md:col-span-2">
-            <label className="mb-2 block text-sm font-medium text-slate-100">Company Logo URL</label>
-            <div className={`flex h-11 items-center rounded-lg border bg-slate-950 ${errors.companyLogoUrl ? "border-red-500" : "border-slate-700"}`}>
-              <Building2 className="ml-3 h-4 w-4 text-slate-400" />
-              <input className="h-full w-full rounded-r-lg bg-transparent px-3 text-sm text-white placeholder:text-slate-500 focus:outline-none" placeholder="https://example.com/logo.png" {...register("companyLogoUrl")} />
+            <label className="mb-2 block text-sm font-medium text-slate-100">Company Logo</label>
+            <div className="rounded-lg border border-slate-700 bg-slate-950 p-2">
+              <input
+                type="file"
+                accept="image/*"
+                onChange={(e) => setCompanyLogoFile(e.target.files?.[0] || null)}
+                className="w-full text-sm text-slate-200 file:mr-3 file:rounded-md file:border-0 file:bg-violet-600 file:px-3 file:py-1.5 file:text-white hover:file:bg-violet-500"
+              />
+              <p className="mt-1 text-xs text-slate-400">
+                {companyLogoFile ? `Selected: ${companyLogoFile.name}` : "Upload PNG/JPG/WebP logo (optional)"}
+              </p>
             </div>
-            {errors.companyLogoUrl && <p className="mt-1 text-xs text-red-400">{errors.companyLogoUrl.message}</p>}
           </div>
 
           <div>

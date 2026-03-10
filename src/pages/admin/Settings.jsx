@@ -41,7 +41,9 @@ const Settings = () => {
   const [isUpdatingProfile, setIsUpdatingProfile] = useState(false);
   const [isChangingPassword, setIsChangingPassword] = useState(false);
   const [isUpdatingBranding, setIsUpdatingBranding] = useState(false);
-  const [companyName, setCompanyName] = useState(user?.tenantCompany?.name || "");
+  const [companyName, setCompanyName] = useState(
+    user?.tenantCompany?.name || "",
+  );
   const [companyLogoUrl, setCompanyLogoUrl] = useState(
     user?.tenantCompany?.logoUrl || "",
   );
@@ -52,6 +54,27 @@ const Settings = () => {
     setCompanyName(user?.tenantCompany?.name || "");
     setCompanyLogoUrl(user?.tenantCompany?.logoUrl || "");
   }, [user?.tenantCompany?.name, user?.tenantCompany?.logoUrl]);
+
+  // Compute the current logo display URL – route S3 logos through API proxy
+  const currentLogoDisplay = (() => {
+    if (companyLogoPreview) return companyLogoPreview; // user picked a new file
+    const rawUrl = user?.tenantCompany?.logoUrl || "";
+    const isS3 = Boolean(
+      user?.tenantCompany?.logoS3Key ||
+      rawUrl.includes(".s3.") ||
+      rawUrl.includes("s3.amazonaws.com"),
+    );
+    if (isS3 && user?.tenantId) {
+      const apiBaseUrl =
+        import.meta.env.VITE_API_URL || "http://localhost:5000/api/v1";
+      const ts = user?.tenantCompany?.logoUpdatedAt
+        ? new Date(user.tenantCompany.logoUpdatedAt).getTime()
+        : Date.now();
+      return `${apiBaseUrl}/tenants/${user.tenantId}/company-logo/public?v=${ts}`;
+    }
+    if (rawUrl) return rawUrl;
+    return "/logo.png";
+  })();
 
   useEffect(() => {
     if (!companyLogoFile) {
@@ -149,25 +172,26 @@ const Settings = () => {
     setIsUpdatingBranding(true);
     try {
       let resolvedLogoUrl = companyLogoUrl?.trim() || undefined;
+      let didUploadLogoFile = false;
 
       if (companyLogoFile) {
         const formData = new FormData();
         formData.append("logo", companyLogoFile);
-        const uploadRes = await api.post(
-          `/tenants/${user.tenantId}/company-logo`,
-          formData,
-          {
-            headers: { "Content-Type": "multipart/form-data" },
-          },
-        );
-        resolvedLogoUrl = uploadRes?.data?.data?.logoUrl || resolvedLogoUrl;
+        await api.post(`/tenants/${user.tenantId}/company-logo`, formData);
+        didUploadLogoFile = true;
+      }
+
+      const companyPayload = {
+        name: companyName?.trim() || undefined,
+      };
+
+      // Only persist manual URL when a file wasn't uploaded in this action.
+      if (!didUploadLogoFile) {
+        companyPayload.logoUrl = resolvedLogoUrl;
       }
 
       await api.put(`/tenants/${user.tenantId}`, {
-        company: {
-          name: companyName?.trim() || undefined,
-          logoUrl: resolvedLogoUrl,
-        },
+        company: companyPayload,
       });
       await dispatch(getMe()).unwrap();
       setCompanyLogoFile(null);
@@ -513,7 +537,7 @@ const Settings = () => {
                   </p>
                   <div className="inline-flex rounded-lg bg-white p-2">
                     <img
-                      src={companyLogoPreview || companyLogoUrl || "/logo.png"}
+                      src={currentLogoDisplay}
                       alt={companyName || "Company Logo"}
                       onError={(e) => {
                         e.currentTarget.src = "/logo.png";

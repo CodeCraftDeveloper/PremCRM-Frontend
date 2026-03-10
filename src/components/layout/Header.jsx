@@ -46,7 +46,7 @@ const Header = () => {
   };
 
   const handleMenuClick = () => {
-    if (window.innerWidth < 768) {
+    if (window.innerWidth < 1024) {
       dispatch(toggleMobileSidebar());
       return;
     }
@@ -59,7 +59,7 @@ const Header = () => {
       <div className="flex items-center gap-2 md:gap-4 min-w-0">
         <button
           onClick={handleMenuClick}
-          className="rounded-lg p-2 hover:bg-gray-100 md:hidden dark:hover:bg-gray-700"
+          className="rounded-lg p-2 hover:bg-gray-100 lg:hidden dark:hover:bg-gray-700"
         >
           <Menu className="h-5 w-5 text-gray-600 dark:text-gray-300" />
         </button>

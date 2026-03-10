@@ -31,6 +31,16 @@ const processQueue = (error, token = null) => {
 // Request interceptor - add CSRF token and request ID
 api.interceptors.request.use(
   (config) => {
+    // Let browser set multipart boundaries for FormData uploads.
+    if (config.data instanceof FormData) {
+      if (config.headers?.["Content-Type"]) {
+        delete config.headers["Content-Type"];
+      }
+      if (config.headers?.common?.["Content-Type"]) {
+        delete config.headers.common["Content-Type"];
+      }
+    }
+
     // Add request ID for tracking
     config.headers["X-Request-ID"] =
       `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
