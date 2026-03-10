@@ -12,18 +12,43 @@ const api = axios.create({
   withCredentials: true, // Still send cookies when possible (same-origin)
 });
 
-// ── In-memory token store (survives across requests, cleared on reload) ──
+// ── Token store (persisted in localStorage to survive page reloads) ──
+const TOKEN_KEY = "auth_access_token";
+const REFRESH_KEY = "auth_refresh_token";
+
 let _accessToken = null;
 let _refreshToken = null;
+
+// Hydrate from localStorage on module load
+try {
+  _accessToken = localStorage.getItem(TOKEN_KEY);
+  _refreshToken = localStorage.getItem(REFRESH_KEY);
+} catch {
+  // Private browsing or localStorage blocked
+}
 
 export const setTokens = (access, refresh) => {
   _accessToken = access || null;
   _refreshToken = refresh || null;
+  try {
+    if (_accessToken) localStorage.setItem(TOKEN_KEY, _accessToken);
+    else localStorage.removeItem(TOKEN_KEY);
+    if (_refreshToken) localStorage.setItem(REFRESH_KEY, _refreshToken);
+    else localStorage.removeItem(REFRESH_KEY);
+  } catch {
+    // Ignore storage errors
+  }
 };
 export const getAccessToken = () => _accessToken;
 export const clearTokens = () => {
   _accessToken = null;
   _refreshToken = null;
+  try {
+    localStorage.removeItem(TOKEN_KEY);
+    localStorage.removeItem(REFRESH_KEY);
+  } catch {
+    // Ignore storage errors
+  }
 };
 
 // Queue to handle multiple 401 responses simultaneously
