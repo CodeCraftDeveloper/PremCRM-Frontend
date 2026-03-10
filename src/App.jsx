@@ -5,6 +5,7 @@ import { Toaster } from "react-hot-toast";
 
 // Store
 import { getMe } from "./store/slices/authSlice";
+import { getAccessToken } from "./services/api";
 
 // Route Protection
 import {
@@ -220,7 +221,7 @@ function App() {
   // Keep authenticated users connected via socket for live status updates.
   useEffect(() => {
     if (isAuthenticated) {
-      socketService.connectSocket();
+      socketService.connectSocket(getAccessToken());
     } else {
       socketService.disconnectSocket();
     }

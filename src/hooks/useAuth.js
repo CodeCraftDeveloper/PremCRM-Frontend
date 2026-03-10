@@ -123,7 +123,13 @@ export const useAuth = () => {
           userName,
         });
 
-        const { user } = response.data.data;
+        const { user, accessToken, refreshToken } = response.data.data;
+
+        // Store tokens in memory for Bearer auth
+        if (accessToken) {
+          const { setTokens } = await import("../services/api");
+          setTokens(accessToken, refreshToken);
+        }
 
         // Dispatch setUser to update Redux state
         dispatch(setUser(user));

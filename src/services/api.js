@@ -9,8 +9,22 @@ const api = axios.create({
   headers: {
     "Content-Type": "application/json",
   },
-  withCredentials: true, // Enable sending httpOnly cookies
+  withCredentials: true, // Still send cookies when possible (same-origin)
 });
+
+// ── In-memory token store (survives across requests, cleared on reload) ──
+let _accessToken = null;
+let _refreshToken = null;
+
+export const setTokens = (access, refresh) => {
+  _accessToken = access || null;
+  _refreshToken = refresh || null;
+};
+export const getAccessToken = () => _accessToken;
+export const clearTokens = () => {
+  _accessToken = null;
+  _refreshToken = null;
+};
 
 // Queue to handle multiple 401 responses simultaneously
 let isRefreshing = false;
@@ -28,7 +42,7 @@ const processQueue = (error, token = null) => {
   failedQueue = [];
 };
 
-// Request interceptor - add CSRF token and request ID
+// Request interceptor - add Bearer token, CSRF token, and request ID
 api.interceptors.request.use(
   (config) => {
     // Let browser set multipart boundaries for FormData uploads.
@@ -44,6 +58,11 @@ api.interceptors.request.use(
     // Add request ID for tracking
     config.headers["X-Request-ID"] =
       `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+
+    // Attach Bearer token from memory (primary auth for cross-origin)
+    if (_accessToken && !config.headers.Authorization) {
+      config.headers.Authorization = `Bearer ${_accessToken}`;
+    }
 
     // Read CSRF token from cookie (double-submit cookie pattern)
     const csrfToken =
@@ -99,11 +118,19 @@ api.interceptors.response.use(
       isRefreshing = true;
 
       try {
-        await api.post("/auth/refresh-token");
+        // Send refresh token in body for cross-origin scenarios
+        const res = await api.post("/auth/refresh-token", {
+          refreshToken: _refreshToken || undefined,
+        });
+        const data = res.data?.data || {};
+        if (data.accessToken) {
+          setTokens(data.accessToken, data.refreshToken || _refreshToken);
+        }
         processQueue(null);
         return api(originalRequest);
       } catch (refreshError) {
         processQueue(refreshError, null);
+        clearTokens();
         store.dispatch(setUser(null));
         toast.error("Session expired. Please log in again.");
         return Promise.reject(refreshError);

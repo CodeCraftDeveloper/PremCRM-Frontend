@@ -1,7 +1,8 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import apiClient from "../../services/api";
+import { setTokens, clearTokens } from "../../services/api";
 
-// Initial state - tokens are now in httpOnly cookies (no localStorage)
+// Initial state - tokens are stored in memory (and cookies as fallback)
 const initialState = {
   user: null,
   isAuthenticated: false,
@@ -15,9 +16,13 @@ export const login = createAsyncThunk(
   async (credentials, { rejectWithValue }) => {
     try {
       const response = await apiClient.post("/auth/login", credentials);
-      const { user } = response.data.data;
+      const { user, accessToken, refreshToken } = response.data.data;
 
-      // Tokens are in httpOnly cookies (handled by browser automatically)
+      // Store tokens in memory for Bearer auth (cross-origin)
+      if (accessToken) {
+        setTokens(accessToken, refreshToken);
+      }
+
       return { user };
     } catch (error) {
       return rejectWithValue(error.response?.data?.message || "Login failed");
@@ -31,7 +36,7 @@ export const logout = createAsyncThunk("auth/logout", async () => {
   } catch {
     // Continue with logout even if API fails
   }
-  // Browser will automatically clear httpOnly cookies on logout
+  clearTokens();
 });
 
 export const getMe = createAsyncThunk(

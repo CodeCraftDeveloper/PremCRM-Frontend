@@ -4,7 +4,14 @@ import { useDispatch } from "react-redux";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Building2, Mail, Lock, User, Building, Fingerprint } from "lucide-react";
+import {
+  Building2,
+  Mail,
+  Lock,
+  User,
+  Building,
+  Fingerprint,
+} from "lucide-react";
 import toast from "react-hot-toast";
 import api from "../../services/api";
 import { getMe } from "../../store/slices/authSlice";
@@ -54,7 +61,14 @@ const CreateTenantPage = () => {
         companyRef: data.companyRef || undefined,
       });
 
-      const tenantId = bootstrapRes?.data?.data?.tenant?.id;
+      // Store tokens in memory for Bearer auth (cross-origin)
+      const resData = bootstrapRes?.data?.data;
+      if (resData?.accessToken) {
+        const { setTokens } = await import("../../services/api");
+        setTokens(resData.accessToken, resData.refreshToken);
+      }
+
+      const tenantId = resData?.tenant?.id;
       if (tenantId && companyLogoFile) {
         const formData = new FormData();
         formData.append("logo", companyLogoFile);
@@ -82,89 +96,183 @@ const CreateTenantPage = () => {
           <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-violet-500 to-indigo-600 shadow-lg shadow-violet-950/40">
             <Building2 className="h-8 w-8 text-white" />
           </div>
-          <h1 className="text-2xl font-bold tracking-tight text-white">Create Tenant</h1>
+          <h1 className="text-2xl font-bold tracking-tight text-white">
+            Create Tenant
+          </h1>
           <p className="mt-2 text-sm text-slate-300">
             Create a workspace and link it to a specific company
           </p>
         </div>
 
-        <form onSubmit={handleSubmit(onSubmit)} className="grid grid-cols-1 gap-4 md:grid-cols-2">
+        <form
+          onSubmit={handleSubmit(onSubmit)}
+          className="grid grid-cols-1 gap-4 md:grid-cols-2"
+        >
           <div>
-            <label className="mb-2 block text-sm font-medium text-slate-100">Tenant Name</label>
-            <div className={`flex h-11 items-center rounded-lg border bg-slate-950 ${errors.tenantName ? "border-red-500" : "border-slate-700"}`}>
+            <label className="mb-2 block text-sm font-medium text-slate-100">
+              Tenant Name
+            </label>
+            <div
+              className={`flex h-11 items-center rounded-lg border bg-slate-950 ${errors.tenantName ? "border-red-500" : "border-slate-700"}`}
+            >
               <Building2 className="ml-3 h-4 w-4 text-slate-400" />
-              <input className="h-full w-full rounded-r-lg bg-transparent px-3 text-sm text-white placeholder:text-slate-500 focus:outline-none" placeholder="Acme Workspace" {...register("tenantName")} />
+              <input
+                className="h-full w-full rounded-r-lg bg-transparent px-3 text-sm text-white placeholder:text-slate-500 focus:outline-none"
+                placeholder="Acme Workspace"
+                {...register("tenantName")}
+              />
             </div>
-            {errors.tenantName && <p className="mt-1 text-xs text-red-400">{errors.tenantName.message}</p>}
+            {errors.tenantName && (
+              <p className="mt-1 text-xs text-red-400">
+                {errors.tenantName.message}
+              </p>
+            )}
           </div>
 
           <div>
-            <label className="mb-2 block text-sm font-medium text-slate-100">Tenant Slug</label>
-            <div className={`flex h-11 items-center rounded-lg border bg-slate-950 ${errors.slug ? "border-red-500" : "border-slate-700"}`}>
+            <label className="mb-2 block text-sm font-medium text-slate-100">
+              Tenant Slug
+            </label>
+            <div
+              className={`flex h-11 items-center rounded-lg border bg-slate-950 ${errors.slug ? "border-red-500" : "border-slate-700"}`}
+            >
               <Fingerprint className="ml-3 h-4 w-4 text-slate-400" />
-              <input className="h-full w-full rounded-r-lg bg-transparent px-3 text-sm text-white placeholder:text-slate-500 focus:outline-none" placeholder="acme-workspace" {...register("slug")} />
+              <input
+                className="h-full w-full rounded-r-lg bg-transparent px-3 text-sm text-white placeholder:text-slate-500 focus:outline-none"
+                placeholder="acme-workspace"
+                {...register("slug")}
+              />
             </div>
-            {errors.slug && <p className="mt-1 text-xs text-red-400">{errors.slug.message}</p>}
+            {errors.slug && (
+              <p className="mt-1 text-xs text-red-400">{errors.slug.message}</p>
+            )}
           </div>
 
           <div>
-            <label className="mb-2 block text-sm font-medium text-slate-100">Company Name</label>
-            <div className={`flex h-11 items-center rounded-lg border bg-slate-950 ${errors.companyName ? "border-red-500" : "border-slate-700"}`}>
+            <label className="mb-2 block text-sm font-medium text-slate-100">
+              Company Name
+            </label>
+            <div
+              className={`flex h-11 items-center rounded-lg border bg-slate-950 ${errors.companyName ? "border-red-500" : "border-slate-700"}`}
+            >
               <Building className="ml-3 h-4 w-4 text-slate-400" />
-              <input className="h-full w-full rounded-r-lg bg-transparent px-3 text-sm text-white placeholder:text-slate-500 focus:outline-none" placeholder="Acme Pvt Ltd" {...register("companyName")} />
+              <input
+                className="h-full w-full rounded-r-lg bg-transparent px-3 text-sm text-white placeholder:text-slate-500 focus:outline-none"
+                placeholder="Acme Pvt Ltd"
+                {...register("companyName")}
+              />
             </div>
-            {errors.companyName && <p className="mt-1 text-xs text-red-400">{errors.companyName.message}</p>}
+            {errors.companyName && (
+              <p className="mt-1 text-xs text-red-400">
+                {errors.companyName.message}
+              </p>
+            )}
           </div>
 
           <div>
-            <label className="mb-2 block text-sm font-medium text-slate-100">Company Reference ID</label>
-            <div className={`flex h-11 items-center rounded-lg border bg-slate-950 ${errors.companyRef ? "border-red-500" : "border-slate-700"}`}>
+            <label className="mb-2 block text-sm font-medium text-slate-100">
+              Company Reference ID
+            </label>
+            <div
+              className={`flex h-11 items-center rounded-lg border bg-slate-950 ${errors.companyRef ? "border-red-500" : "border-slate-700"}`}
+            >
               <Fingerprint className="ml-3 h-4 w-4 text-slate-400" />
-              <input className="h-full w-full rounded-r-lg bg-transparent px-3 text-sm text-white placeholder:text-slate-500 focus:outline-none" placeholder="COMP-001" {...register("companyRef")} />
+              <input
+                className="h-full w-full rounded-r-lg bg-transparent px-3 text-sm text-white placeholder:text-slate-500 focus:outline-none"
+                placeholder="COMP-001"
+                {...register("companyRef")}
+              />
             </div>
-            {errors.companyRef && <p className="mt-1 text-xs text-red-400">{errors.companyRef.message}</p>}
+            {errors.companyRef && (
+              <p className="mt-1 text-xs text-red-400">
+                {errors.companyRef.message}
+              </p>
+            )}
           </div>
 
           <div className="md:col-span-2">
-            <label className="mb-2 block text-sm font-medium text-slate-100">Company Logo</label>
+            <label className="mb-2 block text-sm font-medium text-slate-100">
+              Company Logo
+            </label>
             <div className="rounded-lg border border-slate-700 bg-slate-950 p-2">
               <input
                 type="file"
                 accept="image/*"
-                onChange={(e) => setCompanyLogoFile(e.target.files?.[0] || null)}
+                onChange={(e) =>
+                  setCompanyLogoFile(e.target.files?.[0] || null)
+                }
                 className="w-full text-sm text-slate-200 file:mr-3 file:rounded-md file:border-0 file:bg-violet-600 file:px-3 file:py-1.5 file:text-white hover:file:bg-violet-500"
               />
               <p className="mt-1 text-xs text-slate-400">
-                {companyLogoFile ? `Selected: ${companyLogoFile.name}` : "Upload PNG/JPG/WebP logo (optional)"}
+                {companyLogoFile
+                  ? `Selected: ${companyLogoFile.name}`
+                  : "Upload PNG/JPG/WebP logo (optional)"}
               </p>
             </div>
           </div>
 
           <div>
-            <label className="mb-2 block text-sm font-medium text-slate-100">Admin Name</label>
-            <div className={`flex h-11 items-center rounded-lg border bg-slate-950 ${errors.adminName ? "border-red-500" : "border-slate-700"}`}>
+            <label className="mb-2 block text-sm font-medium text-slate-100">
+              Admin Name
+            </label>
+            <div
+              className={`flex h-11 items-center rounded-lg border bg-slate-950 ${errors.adminName ? "border-red-500" : "border-slate-700"}`}
+            >
               <User className="ml-3 h-4 w-4 text-slate-400" />
-              <input className="h-full w-full rounded-r-lg bg-transparent px-3 text-sm text-white placeholder:text-slate-500 focus:outline-none" placeholder="John Admin" {...register("adminName")} />
+              <input
+                className="h-full w-full rounded-r-lg bg-transparent px-3 text-sm text-white placeholder:text-slate-500 focus:outline-none"
+                placeholder="John Admin"
+                {...register("adminName")}
+              />
             </div>
-            {errors.adminName && <p className="mt-1 text-xs text-red-400">{errors.adminName.message}</p>}
+            {errors.adminName && (
+              <p className="mt-1 text-xs text-red-400">
+                {errors.adminName.message}
+              </p>
+            )}
           </div>
 
           <div>
-            <label className="mb-2 block text-sm font-medium text-slate-100">Admin Email</label>
-            <div className={`flex h-11 items-center rounded-lg border bg-slate-950 ${errors.adminEmail ? "border-red-500" : "border-slate-700"}`}>
+            <label className="mb-2 block text-sm font-medium text-slate-100">
+              Admin Email
+            </label>
+            <div
+              className={`flex h-11 items-center rounded-lg border bg-slate-950 ${errors.adminEmail ? "border-red-500" : "border-slate-700"}`}
+            >
               <Mail className="ml-3 h-4 w-4 text-slate-400" />
-              <input className="h-full w-full rounded-r-lg bg-transparent px-3 text-sm text-white placeholder:text-slate-500 focus:outline-none" placeholder="admin@acme.com" {...register("adminEmail")} />
+              <input
+                className="h-full w-full rounded-r-lg bg-transparent px-3 text-sm text-white placeholder:text-slate-500 focus:outline-none"
+                placeholder="admin@acme.com"
+                {...register("adminEmail")}
+              />
             </div>
-            {errors.adminEmail && <p className="mt-1 text-xs text-red-400">{errors.adminEmail.message}</p>}
+            {errors.adminEmail && (
+              <p className="mt-1 text-xs text-red-400">
+                {errors.adminEmail.message}
+              </p>
+            )}
           </div>
 
           <div className="md:col-span-2">
-            <label className="mb-2 block text-sm font-medium text-slate-100">Admin Password</label>
-            <div className={`flex h-11 items-center rounded-lg border bg-slate-950 ${errors.adminPassword ? "border-red-500" : "border-slate-700"}`}>
+            <label className="mb-2 block text-sm font-medium text-slate-100">
+              Admin Password
+            </label>
+            <div
+              className={`flex h-11 items-center rounded-lg border bg-slate-950 ${errors.adminPassword ? "border-red-500" : "border-slate-700"}`}
+            >
               <Lock className="ml-3 h-4 w-4 text-slate-400" />
-              <input type="password" className="h-full w-full rounded-r-lg bg-transparent px-3 text-sm text-white placeholder:text-slate-500 focus:outline-none" placeholder="Minimum 8 characters" {...register("adminPassword")} />
+              <input
+                type="password"
+                className="h-full w-full rounded-r-lg bg-transparent px-3 text-sm text-white placeholder:text-slate-500 focus:outline-none"
+                placeholder="Minimum 8 characters"
+                {...register("adminPassword")}
+              />
             </div>
-            {errors.adminPassword && <p className="mt-1 text-xs text-red-400">{errors.adminPassword.message}</p>}
+            {errors.adminPassword && (
+              <p className="mt-1 text-xs text-red-400">
+                {errors.adminPassword.message}
+              </p>
+            )}
           </div>
 
           <div className="mt-2 md:col-span-2">
@@ -179,7 +287,10 @@ const CreateTenantPage = () => {
         </form>
 
         <div className="mt-5 border-t border-slate-700 pt-4 text-center">
-          <Link to="/login" className="text-sm font-medium text-cyan-300 hover:text-cyan-200">
+          <Link
+            to="/login"
+            className="text-sm font-medium text-cyan-300 hover:text-cyan-200"
+          >
             Back to Login
           </Link>
         </div>
