@@ -8,7 +8,7 @@ import {
   clearError,
   setUser,
 } from "../store/slices/authSlice";
-import apiClient from "../services/api";
+import apiClient, { setTokens } from "../services/api";
 
 /**
  * Custom hook for authentication (Redux-based)
@@ -127,7 +127,6 @@ export const useAuth = () => {
 
         // Store tokens in memory for Bearer auth
         if (accessToken) {
-          const { setTokens } = await import("../services/api");
           setTokens(accessToken, refreshToken);
         }
 
@@ -166,20 +165,24 @@ export const useAuth = () => {
   /**
    * Reset password with token
    */
-  const handleResetPassword = useCallback(async (token, password) => {
-    try {
-      const response = await apiClient.post(`/auth/reset-password/${token}`, {
-        password,
-      });
+  const handleResetPassword = useCallback(
+    async (token, password, confirmPassword = password) => {
+      try {
+        const response = await apiClient.post(`/auth/reset-password/${token}`, {
+          password,
+          confirmPassword,
+        });
 
-      return { success: true, message: response.data.message };
-    } catch (err) {
-      return {
-        success: false,
-        error: err.response?.data?.message || err.message,
-      };
-    }
-  }, []);
+        return { success: true, message: response.data.message };
+      } catch (err) {
+        return {
+          success: false,
+          error: err.response?.data?.message || err.message,
+        };
+      }
+    },
+    [],
+  );
 
   /**
    * Create invite (Admin only)
@@ -191,7 +194,12 @@ export const useAuth = () => {
         role,
       });
 
-      return { success: true, invite: response.data.data.invite };
+      return {
+        success: true,
+        invite: response.data.data?.invite,
+        inviteUrl: response.data.data?.inviteUrl || "",
+        inviteToken: response.data.data?.inviteToken || "",
+      };
     } catch (err) {
       return {
         success: false,

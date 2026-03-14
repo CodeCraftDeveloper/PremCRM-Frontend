@@ -33,6 +33,36 @@ const passwordSchema = z
     path: ["confirmPassword"],
   });
 
+const DEFAULT_NOTIFICATION_PREFERENCES = {
+  newClientAssigned: true,
+  followUpReminders: true,
+  statusUpdates: false,
+  weeklyReports: false,
+};
+
+const NOTIFICATION_OPTIONS = [
+  {
+    key: "newClientAssigned",
+    label: "New client assigned",
+    description: "Get notified when a client is assigned to you",
+  },
+  {
+    key: "followUpReminders",
+    label: "Follow-up reminders",
+    description: "Receive reminders for pending follow-ups",
+  },
+  {
+    key: "statusUpdates",
+    label: "Status updates",
+    description: "Get notified when client status changes",
+  },
+  {
+    key: "weeklyReports",
+    label: "Weekly reports",
+    description: "Receive weekly performance summary",
+  },
+];
+
 const Settings = () => {
   const dispatch = useDispatch();
   const { user } = useSelector((state) => state.auth);
@@ -41,6 +71,9 @@ const Settings = () => {
   const [isUpdatingProfile, setIsUpdatingProfile] = useState(false);
   const [isChangingPassword, setIsChangingPassword] = useState(false);
   const [isUpdatingBranding, setIsUpdatingBranding] = useState(false);
+  const [isUpdatingNotifications, setIsUpdatingNotifications] = useState(false);
+  const [isLoadingTenantBranding, setIsLoadingTenantBranding] = useState(false);
+  const [tenantSettings, setTenantSettings] = useState({});
   const [companyName, setCompanyName] = useState(
     user?.tenantCompany?.name || "",
   );
@@ -49,11 +82,69 @@ const Settings = () => {
   );
   const [companyLogoFile, setCompanyLogoFile] = useState(null);
   const [companyLogoPreview, setCompanyLogoPreview] = useState("");
+  const [publicHeroTagline, setPublicHeroTagline] = useState("");
+  const [publicHeroImageUrl, setPublicHeroImageUrl] = useState("");
+  const [publicAccentColor, setPublicAccentColor] = useState("#06b6d4");
+  const [notificationPreferences, setNotificationPreferences] = useState(
+    DEFAULT_NOTIFICATION_PREFERENCES,
+  );
+  const persistedNotificationPreferences = {
+    ...DEFAULT_NOTIFICATION_PREFERENCES,
+    ...(user?.notificationPreferences || {}),
+  };
+  const hasNotificationChanges = NOTIFICATION_OPTIONS.some(
+    ({ key }) =>
+      Boolean(notificationPreferences[key]) !==
+      Boolean(persistedNotificationPreferences[key]),
+  );
 
   useEffect(() => {
     setCompanyName(user?.tenantCompany?.name || "");
     setCompanyLogoUrl(user?.tenantCompany?.logoUrl || "");
   }, [user?.tenantCompany?.name, user?.tenantCompany?.logoUrl]);
+
+  useEffect(() => {
+    let isActive = true;
+
+    const loadTenantBranding = async () => {
+      if (user?.role !== "admin" || !user?.tenantId) return;
+      setIsLoadingTenantBranding(true);
+      try {
+        const response = await api.get(`/tenants/${user.tenantId}`);
+        const tenant = response?.data?.data?.tenant;
+        const settings = tenant?.settings || {};
+        const publicEventLanding = settings?.publicEventLanding || {};
+
+        if (!isActive) return;
+
+        setTenantSettings(settings);
+        setPublicHeroTagline(publicEventLanding.heroTagline || "");
+        setPublicHeroImageUrl(publicEventLanding.heroImageUrl || "");
+        setPublicAccentColor(publicEventLanding.accentColor || "#06b6d4");
+      } catch {
+        if (isActive) {
+          toast.error("Failed to load tenant branding settings");
+        }
+      } finally {
+        if (isActive) {
+          setIsLoadingTenantBranding(false);
+        }
+      }
+    };
+
+    loadTenantBranding();
+
+    return () => {
+      isActive = false;
+    };
+  }, [user?.role, user?.tenantId]);
+
+  useEffect(() => {
+    setNotificationPreferences({
+      ...DEFAULT_NOTIFICATION_PREFERENCES,
+      ...(user?.notificationPreferences || {}),
+    });
+  }, [user?.notificationPreferences]);
 
   // Compute the current logo display URL – route S3 logos through API proxy
   const currentLogoDisplay = (() => {
@@ -169,6 +260,15 @@ const Settings = () => {
       return;
     }
 
+    const normalizedAccent = String(publicAccentColor || "")
+      .trim()
+      .replace(/^([^#])/, "#$1");
+
+    if (normalizedAccent && !/^#[0-9A-Fa-f]{3,8}$/.test(normalizedAccent)) {
+      toast.error("Please enter a valid accent hex color");
+      return;
+    }
+
     setIsUpdatingBranding(true);
     try {
       let resolvedLogoUrl = companyLogoUrl?.trim() || undefined;
@@ -190,9 +290,26 @@ const Settings = () => {
         companyPayload.logoUrl = resolvedLogoUrl;
       }
 
-      await api.put(`/tenants/${user.tenantId}`, {
+      const mergedSettings = {
+        ...(tenantSettings || {}),
+        publicEventLanding: {
+          ...(tenantSettings?.publicEventLanding || {}),
+          heroTagline: publicHeroTagline?.trim() || "",
+          heroImageUrl: publicHeroImageUrl?.trim() || "",
+          accentColor: normalizedAccent || "#06b6d4",
+        },
+      };
+
+      const updateResponse = await api.put(`/tenants/${user.tenantId}`, {
         company: companyPayload,
+        settings: mergedSettings,
       });
+      const updatedTenant = updateResponse?.data?.data?.tenant;
+
+      if (updatedTenant?.settings) {
+        setTenantSettings(updatedTenant.settings);
+      }
+
       await dispatch(getMe()).unwrap();
       setCompanyLogoFile(null);
       toast.success("Company branding updated successfully");
@@ -202,6 +319,29 @@ const Settings = () => {
       );
     } finally {
       setIsUpdatingBranding(false);
+    }
+  };
+
+  const onNotificationPreferenceChange = (key, value) => {
+    setNotificationPreferences((prev) => ({
+      ...prev,
+      [key]: value,
+    }));
+  };
+
+  const onNotificationsSubmit = async () => {
+    if (!hasNotificationChanges) {
+      return;
+    }
+
+    setIsUpdatingNotifications(true);
+    try {
+      await dispatch(updateProfile({ notificationPreferences })).unwrap();
+      toast.success("Notification preferences saved");
+    } catch (error) {
+      toast.error(error || "Failed to save notification preferences");
+    } finally {
+      setIsUpdatingNotifications(false);
     }
   };
 
@@ -376,27 +516,9 @@ const Settings = () => {
               </div>
 
               <div className="space-y-4">
-                {[
-                  {
-                    label: "New client assigned",
-                    description:
-                      "Get notified when a client is assigned to you",
-                  },
-                  {
-                    label: "Follow-up reminders",
-                    description: "Receive reminders for pending follow-ups",
-                  },
-                  {
-                    label: "Status updates",
-                    description: "Get notified when client status changes",
-                  },
-                  {
-                    label: "Weekly reports",
-                    description: "Receive weekly performance summary",
-                  },
-                ].map((item, index) => (
+                {NOTIFICATION_OPTIONS.map((item) => (
                   <div
-                    key={index}
+                    key={item.key}
                     className="flex items-center justify-between py-3 border-b border-gray-200 dark:border-gray-700 last:border-0"
                   >
                     <div>
@@ -410,13 +532,30 @@ const Settings = () => {
                     <label className="relative inline-flex items-center cursor-pointer">
                       <input
                         type="checkbox"
-                        defaultChecked={index < 2}
+                        checked={Boolean(notificationPreferences[item.key])}
+                        onChange={(e) =>
+                          onNotificationPreferenceChange(
+                            item.key,
+                            e.target.checked,
+                          )
+                        }
                         className="sr-only peer"
                       />
-                      <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-indigo-300 dark:peer-focus:ring-indigo-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-indigo-600"></div>
+                      <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-indigo-300 dark:peer-focus:ring-indigo-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-indigo-600"></div>
                     </label>
                   </div>
                 ))}
+              </div>
+
+              <div className="flex justify-end pt-6">
+                <Button
+                  type="button"
+                  loading={isUpdatingNotifications}
+                  disabled={!hasNotificationChanges}
+                  onClick={onNotificationsSubmit}
+                >
+                  Save Preferences
+                </Button>
               </div>
             </div>
           )}
@@ -459,7 +598,7 @@ const Settings = () => {
                               ? "bg-yellow-400"
                               : themeOption === "dark"
                                 ? "bg-gray-800"
-                                : "bg-gradient-to-br from-yellow-400 to-gray-800"
+                                : "bg-linear-to-br from-yellow-400 to-gray-800"
                           }`}
                         />
                         <span className="text-sm font-medium capitalize text-gray-900 dark:text-white">
@@ -479,7 +618,7 @@ const Settings = () => {
                   </p>
                   <label className="relative inline-flex items-center cursor-pointer">
                     <input type="checkbox" className="sr-only peer" />
-                    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-indigo-300 dark:peer-focus:ring-indigo-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-indigo-600"></div>
+                    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-indigo-300 dark:peer-focus:ring-indigo-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-indigo-600"></div>
                     <span className="ml-3 text-sm font-medium text-gray-900 dark:text-white">
                       Enable compact mode
                     </span>
@@ -542,9 +681,70 @@ const Settings = () => {
                       onError={(e) => {
                         e.currentTarget.src = "/logo.png";
                       }}
-                      className="h-10 w-auto max-w-[190px] object-contain"
+                      className="h-10 w-auto max-w-47.5 object-contain"
                     />
                   </div>
+                </div>
+
+                <div className="rounded-lg border border-gray-200 p-4 dark:border-gray-700">
+                  <h4 className="text-sm font-semibold text-gray-900 dark:text-white">
+                    Public Event Landing Defaults
+                  </h4>
+                  <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                    These defaults apply to tenant event landing pages and can
+                    be overridden per event.
+                  </p>
+
+                  {isLoadingTenantBranding ? (
+                    <p className="mt-3 text-sm text-gray-500 dark:text-gray-400">
+                      Loading tenant landing settings...
+                    </p>
+                  ) : (
+                    <div className="mt-4 space-y-4">
+                      <Input
+                        label="Hero Tagline"
+                        value={publicHeroTagline}
+                        onChange={(e) => setPublicHeroTagline(e.target.value)}
+                        placeholder="Discover events, register fast, and stay connected"
+                      />
+
+                      <Input
+                        label="Hero Image URL"
+                        value={publicHeroImageUrl}
+                        onChange={(e) => setPublicHeroImageUrl(e.target.value)}
+                        placeholder="https://example.com/tenant-event-hero.jpg"
+                      />
+
+                      <div>
+                        <label className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                          Accent Color
+                        </label>
+                        <div className="flex items-center gap-3">
+                          <input
+                            type="text"
+                            value={publicAccentColor}
+                            onChange={(e) =>
+                              setPublicAccentColor(e.target.value)
+                            }
+                            className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 dark:border-gray-600 dark:bg-gray-800 dark:text-white"
+                            placeholder="#06b6d4"
+                          />
+                          <span
+                            className="h-9 w-9 rounded-lg border border-gray-300 dark:border-gray-600"
+                            style={{
+                              backgroundColor: /^#?[0-9A-Fa-f]{3,8}$/.test(
+                                publicAccentColor || "",
+                              )
+                                ? publicAccentColor.startsWith("#")
+                                  ? publicAccentColor
+                                  : `#${publicAccentColor}`
+                                : "#06b6d4",
+                            }}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 <div className="flex justify-end pt-4">

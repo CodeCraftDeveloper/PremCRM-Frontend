@@ -153,7 +153,7 @@ const authSlice = createSlice({
       })
       .addCase(updateProfile.fulfilled, (state, action) => {
         state.isLoading = false;
-        state.user = action.payload;
+        state.user = { ...state.user, ...action.payload };
       })
       .addCase(updateProfile.rejected, (state, action) => {
         state.isLoading = false;

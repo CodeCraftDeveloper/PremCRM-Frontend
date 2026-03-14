@@ -22,6 +22,10 @@ import SuperAdminLayout from "./components/layout/SuperAdminLayout";
 import LoginPage from "./pages/auth/LoginPage";
 import MarketingManagerRegistrationPage from "./pages/auth/MarketingManagerRegistrationPage";
 import CreateTenantPage from "./pages/auth/CreateTenantPage";
+import ForgotPasswordPage from "./pages/auth/ForgotPasswordPage";
+import ResetPasswordPage from "./pages/auth/ResetPasswordPage";
+import AcceptInvitePage from "./pages/auth/AcceptInvitePage";
+import LandingPage from "./pages/landing/LandingPage";
 
 // =====================
 // Lazy-loaded page chunks (code-split per route)
@@ -73,6 +77,31 @@ const EventsList = lazy(() =>
 );
 const EventForm = lazy(() =>
   import("./pages/events").then((m) => ({ default: m.EventForm })),
+);
+const EventDetailPage = lazy(() =>
+  import("./pages/events").then((m) => ({ default: m.EventDetailPage })),
+);
+const PublicEventListPage = lazy(() =>
+  import("./pages/events").then((m) => ({ default: m.PublicEventListPage })),
+);
+const PublicEventDetailPage = lazy(() =>
+  import("./pages/events").then((m) => ({ default: m.PublicEventDetailPage })),
+);
+const RegistrationConfirmationPage = lazy(() =>
+  import("./pages/events").then((m) => ({
+    default: m.RegistrationConfirmationPage,
+  })),
+);
+const EventRegistrationsPage = lazy(() =>
+  import("./pages/events").then((m) => ({
+    default: m.EventRegistrationsPage,
+  })),
+);
+const TicketTypesPage = lazy(() =>
+  import("./pages/events").then((m) => ({ default: m.TicketTypesPage })),
+);
+const CheckinPage = lazy(() =>
+  import("./pages/events").then((m) => ({ default: m.CheckinPage })),
 );
 
 // Clients pages
@@ -262,6 +291,7 @@ function App() {
 
       <Routes>
         {/* Public Routes */}
+        <Route path="/" element={<LandingPage />} />
         <Route
           path="/login"
           element={
@@ -283,6 +313,38 @@ function App() {
           element={
             <PublicRoute>
               <CreateTenantPage />
+            </PublicRoute>
+          }
+        />
+        <Route
+          path="/register"
+          element={
+            <PublicRoute>
+              <CreateTenantPage />
+            </PublicRoute>
+          }
+        />
+        <Route
+          path="/forgot-password"
+          element={
+            <PublicRoute>
+              <ForgotPasswordPage />
+            </PublicRoute>
+          }
+        />
+        <Route
+          path="/reset-password/:token"
+          element={
+            <PublicRoute>
+              <ResetPasswordPage />
+            </PublicRoute>
+          }
+        />
+        <Route
+          path="/accept-invite/:token"
+          element={
+            <PublicRoute>
+              <AcceptInvitePage />
             </PublicRoute>
           }
         />
@@ -425,8 +487,38 @@ function App() {
               </Lazy>
             }
           />
-
-          {/* Clients Management */}
+          <Route
+            path="events/:id"
+            element={
+              <Lazy>
+                <EventDetailPage isAdmin />
+              </Lazy>
+            }
+          />
+          <Route
+            path="events/:id/ticket-types"
+            element={
+              <Lazy>
+                <TicketTypesPage isAdmin />
+              </Lazy>
+            }
+          />
+          <Route
+            path="events/:id/registrations"
+            element={
+              <Lazy>
+                <EventRegistrationsPage isAdmin />
+              </Lazy>
+            }
+          />
+          <Route
+            path="events/:id/checkin"
+            element={
+              <Lazy>
+                <CheckinPage />
+              </Lazy>
+            }
+          />
           <Route
             path="clients"
             element={
@@ -708,6 +800,38 @@ function App() {
               </Lazy>
             }
           />
+          <Route
+            path="events/:id"
+            element={
+              <Lazy>
+                <EventDetailPage isAdmin={false} />
+              </Lazy>
+            }
+          />
+          <Route
+            path="events/:id/ticket-types"
+            element={
+              <Lazy>
+                <TicketTypesPage isAdmin={false} />
+              </Lazy>
+            }
+          />
+          <Route
+            path="events/:id/registrations"
+            element={
+              <Lazy>
+                <EventRegistrationsPage isAdmin={false} />
+              </Lazy>
+            }
+          />
+          <Route
+            path="events/:id/checkin"
+            element={
+              <Lazy>
+                <CheckinPage />
+              </Lazy>
+            }
+          />
 
           {/* Clients Management */}
           <Route
@@ -850,6 +974,32 @@ function App() {
           />
         </Route>
 
+        {/* Public Event Registration Flow */}
+        <Route
+          path="/events/:tenantSlug"
+          element={
+            <Lazy>
+              <PublicEventListPage />
+            </Lazy>
+          }
+        />
+        <Route
+          path="/events/:tenantSlug/:eventId"
+          element={
+            <Lazy>
+              <PublicEventDetailPage />
+            </Lazy>
+          }
+        />
+        <Route
+          path="/registration-confirmation/:qrToken"
+          element={
+            <Lazy>
+              <RegistrationConfirmationPage />
+            </Lazy>
+          }
+        />
+
         {/* Default Redirects */}
         <Route
           path="/forms/:tenantSlug/:apiName"
@@ -871,7 +1021,6 @@ function App() {
             </div>
           }
         />
-        <Route path="/" element={<Navigate to="/login" replace />} />
         <Route path="*" element={<Navigate to="/404" replace />} />
       </Routes>
     </>

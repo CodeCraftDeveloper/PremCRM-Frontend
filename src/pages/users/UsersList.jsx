@@ -12,6 +12,8 @@ import {
   CheckCircle,
   XCircle,
   Clock,
+  Copy,
+  Send,
 } from "lucide-react";
 import {
   fetchUsers,
@@ -30,11 +32,13 @@ import {
   EmptyState,
   StatusBadge,
   Modal,
+  Input,
 } from "../../components/ui";
 import api from "../../services/api";
 import { connectSocket } from "../../services/socket";
 import toast from "react-hot-toast";
 import { format } from "date-fns";
+import { useAuth } from "../../hooks";
 
 const ROLE_OPTIONS = [
   { value: "admin", label: "Admin" },
@@ -55,6 +59,7 @@ const APPROVAL_OPTIONS = [
 const UsersList = () => {
   const dispatch = useDispatch();
   const { users, pagination, isLoading } = useSelector((state) => state.users);
+  const { createInvite } = useAuth();
 
   const [search, setSearch] = useState("");
   const [roleFilter, setRoleFilter] = useState("");
@@ -64,9 +69,14 @@ const UsersList = () => {
   const [resetModalOpen, setResetModalOpen] = useState(false);
   const [approveModalOpen, setApproveModalOpen] = useState(false);
   const [rejectModalOpen, setRejectModalOpen] = useState(false);
+  const [inviteModalOpen, setInviteModalOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
   const [liveStatusMap, setLiveStatusMap] = useState({});
   const [pendingCount, setPendingCount] = useState(0);
+  const [inviteEmail, setInviteEmail] = useState("");
+  const [inviteRole, setInviteRole] = useState("marketing");
+  const [inviteData, setInviteData] = useState(null);
+  const [isSendingInvite, setIsSendingInvite] = useState(false);
 
   useEffect(() => {
     const params = {
@@ -220,6 +230,50 @@ const UsersList = () => {
     }
   };
 
+  const handleInviteSubmit = async () => {
+    if (!inviteEmail.trim()) {
+      toast.error("Invite email is required");
+      return;
+    }
+
+    setIsSendingInvite(true);
+    try {
+      const result = await createInvite(inviteEmail.trim(), inviteRole);
+
+      if (!result.success) {
+        toast.error(result.error || "Failed to create invite");
+        return;
+      }
+
+      setInviteData({
+        invite: result.invite || null,
+        inviteUrl: result.inviteUrl || "",
+        inviteToken: result.inviteToken || "",
+      });
+      toast.success("Invite created successfully");
+    } finally {
+      setIsSendingInvite(false);
+    }
+  };
+
+  const handleCopyInviteValue = async (value, label) => {
+    if (!value) return;
+
+    try {
+      await navigator.clipboard.writeText(value);
+      toast.success(`${label} copied`);
+    } catch {
+      toast.error(`Failed to copy ${label.toLowerCase()}`);
+    }
+  };
+
+  const closeInviteModal = () => {
+    setInviteModalOpen(false);
+    setInviteEmail("");
+    setInviteRole("marketing");
+    setInviteData(null);
+  };
+
   return (
     <div className="space-y-6">
       {/* Pending Approvals Banner */}
@@ -253,6 +307,13 @@ const UsersList = () => {
           </p>
         </div>
         <div className="flex gap-2">
+          <Button
+            variant="outline"
+            icon={Send}
+            onClick={() => setInviteModalOpen(true)}
+          >
+            Invite User
+          </Button>
           <Link to="/admin/users/marketing/register">
             <Button variant="secondary">Register Marketing Manager</Button>
           </Link>
@@ -352,7 +413,7 @@ const UsersList = () => {
                       >
                         <td className="whitespace-nowrap px-6 py-4">
                           <div className="flex items-center">
-                            <div className="h-10 w-10 flex-shrink-0">
+                            <div className="h-10 w-10 shrink-0">
                               <div className="flex h-10 w-10 items-center justify-center rounded-full bg-indigo-100 dark:bg-indigo-900">
                                 <span className="text-sm font-medium text-indigo-700 dark:text-indigo-300">
                                   {user.name?.charAt(0)?.toUpperCase() || "U"}
@@ -498,6 +559,117 @@ const UsersList = () => {
           onPageChange={(page) => dispatch(setPage(page))}
         />
       )}
+
+      {/* Delete Confirmation Modal */}
+      <Modal
+        isOpen={inviteModalOpen}
+        onClose={closeInviteModal}
+        title="Invite User"
+        size="lg"
+      >
+        <div className="space-y-4">
+          <p className="text-sm text-gray-600 dark:text-gray-400">
+            Create an invite link for a new admin or marketing user. Share the
+            generated link directly with them so they can finish the
+            accept-invite flow.
+          </p>
+
+          <div className="grid gap-4 sm:grid-cols-2">
+            <Input
+              label="Invite Email"
+              type="email"
+              value={inviteEmail}
+              onChange={(event) => setInviteEmail(event.target.value)}
+              placeholder="new.user@example.com"
+            />
+            <Select
+              label="Role"
+              options={ROLE_OPTIONS}
+              value={inviteRole}
+              onChange={(event) => setInviteRole(event.target.value)}
+            />
+          </div>
+
+          {inviteData && (
+            <div className="space-y-3 rounded-xl border border-emerald-200 bg-emerald-50 p-4 dark:border-emerald-900/60 dark:bg-emerald-900/10">
+              <div>
+                <p className="text-sm font-medium text-emerald-800 dark:text-emerald-300">
+                  Invite ready
+                </p>
+                <p className="text-xs text-emerald-700/80 dark:text-emerald-300/80">
+                  Share the URL below or keep the token for audit/debugging.
+                </p>
+              </div>
+
+              <div className="space-y-2">
+                <div>
+                  <p className="mb-1 text-xs font-medium uppercase tracking-wide text-gray-500 dark:text-gray-400">
+                    Invite URL
+                  </p>
+                  <div className="flex gap-2">
+                    <input
+                      readOnly
+                      value={
+                        inviteData.inviteUrl ||
+                        "Invite URL unavailable for this environment"
+                      }
+                      className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-700 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200"
+                    />
+                    <Button
+                      variant="outline"
+                      icon={Copy}
+                      onClick={() =>
+                        handleCopyInviteValue(
+                          inviteData.inviteUrl,
+                          "Invite URL",
+                        )
+                      }
+                      disabled={!inviteData.inviteUrl}
+                    >
+                      Copy
+                    </Button>
+                  </div>
+                </div>
+
+                <div>
+                  <p className="mb-1 text-xs font-medium uppercase tracking-wide text-gray-500 dark:text-gray-400">
+                    Invite Token
+                  </p>
+                  <div className="flex gap-2">
+                    <input
+                      readOnly
+                      value={inviteData.inviteToken || ""}
+                      className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-700 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200"
+                    />
+                    <Button
+                      variant="outline"
+                      icon={Copy}
+                      onClick={() =>
+                        handleCopyInviteValue(
+                          inviteData.inviteToken,
+                          "Invite token",
+                        )
+                      }
+                      disabled={!inviteData.inviteToken}
+                    >
+                      Copy
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          <div className="flex justify-end gap-3">
+            <Button variant="outline" onClick={closeInviteModal}>
+              Close
+            </Button>
+            <Button onClick={handleInviteSubmit} loading={isSendingInvite}>
+              Generate Invite
+            </Button>
+          </div>
+        </div>
+      </Modal>
 
       {/* Delete Confirmation Modal */}
       <Modal

@@ -8,6 +8,7 @@ import {
   fetchWebsite,
   clearSelectedWebsite,
 } from "../../store/slices/websitesSlice";
+import { eventsService, ticketTypesService } from "../../services";
 import { Button, Input, Select, Textarea } from "../../components/ui";
 import FormFieldsBuilder from "./FormFieldsBuilder";
 import toast from "react-hot-toast";
@@ -20,11 +21,61 @@ const CATEGORY_OPTIONS = [
   { value: "other", label: "Other" },
 ];
 
+const SUBMISSION_TARGET_OPTIONS = [
+  { value: "lead", label: "Lead Capture" },
+  { value: "event_registration", label: "Event Registration" },
+];
+
+const DEFAULT_FORM_CONFIG = {
+  submissionTarget: "lead",
+  eventConfig: {
+    eventId: "",
+    defaultTicketTypeId: "",
+    defaultQuantity: 1,
+    allowTicketSelection: true,
+    allowQuantitySelection: true,
+  },
+  formTitle: "",
+  formDescription: "",
+  submitButtonText: "Submit",
+  successMessage: "Thank you! We have received your submission.",
+  redirectUrl: "",
+  theme: {
+    primaryColor: "#4F46E5",
+    backgroundColor: "#FFFFFF",
+    textColor: "#111827",
+    borderRadius: "md",
+    fontSize: "base",
+    labelPosition: "top",
+  },
+  defaultFields: {
+    firstName: { show: true, required: true, label: "First Name" },
+    lastName: { show: true, required: false, label: "Last Name" },
+    email: { show: true, required: true, label: "Email" },
+    phone: { show: true, required: false, label: "Phone" },
+    company: { show: true, required: false, label: "Company" },
+    message: { show: true, required: false, label: "Message" },
+    country: { show: false, required: false, label: "Country" },
+    city: { show: false, required: false, label: "City" },
+    state: { show: false, required: false, label: "State" },
+    zipCode: { show: false, required: false, label: "Zip Code" },
+    productInterest: {
+      show: true,
+      required: false,
+      label: "Product Interest",
+    },
+  },
+};
+
 const WebsiteForm = ({ isEdit = false }) => {
   const { id } = useParams();
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const { selectedWebsite, isLoading } = useSelector((state) => state.websites);
+  const [events, setEvents] = useState([]);
+  const [ticketTypes, setTicketTypes] = useState([]);
+  const [loadingEvents, setLoadingEvents] = useState(false);
+  const [loadingTicketTypes, setLoadingTicketTypes] = useState(false);
 
   const [formData, setFormData] = useState({
     name: "",
@@ -46,36 +97,10 @@ const WebsiteForm = ({ isEdit = false }) => {
     products: [],
     formFields: [],
     formConfig: {
-      formTitle: "",
-      formDescription: "",
-      submitButtonText: "Submit",
-      successMessage: "Thank you! We will contact you soon.",
-      redirectUrl: "",
-      theme: {
-        primaryColor: "#4F46E5",
-        backgroundColor: "#FFFFFF",
-        textColor: "#111827",
-        borderRadius: "md",
-        fontSize: "base",
-        labelPosition: "top",
-      },
-      defaultFields: {
-        firstName: { show: true, required: true, label: "First Name" },
-        lastName: { show: true, required: false, label: "Last Name" },
-        email: { show: true, required: true, label: "Email" },
-        phone: { show: true, required: false, label: "Phone" },
-        company: { show: true, required: false, label: "Company" },
-        message: { show: true, required: false, label: "Message" },
-        country: { show: false, required: false, label: "Country" },
-        city: { show: false, required: false, label: "City" },
-        state: { show: false, required: false, label: "State" },
-        zipCode: { show: false, required: false, label: "Zip Code" },
-        productInterest: {
-          show: true,
-          required: false,
-          label: "Product Interest",
-        },
-      },
+      ...DEFAULT_FORM_CONFIG,
+      eventConfig: { ...DEFAULT_FORM_CONFIG.eventConfig },
+      theme: { ...DEFAULT_FORM_CONFIG.theme },
+      defaultFields: { ...DEFAULT_FORM_CONFIG.defaultFields },
     },
   });
   const [newProduct, setNewProduct] = useState("");
@@ -90,8 +115,28 @@ const WebsiteForm = ({ isEdit = false }) => {
   }, [dispatch, isEdit, id]);
 
   useEffect(() => {
+    let active = true;
+    const loadEvents = async () => {
+      setLoadingEvents(true);
+      try {
+        const response = await eventsService.getActive();
+        const items = response?.data?.events || response?.events || [];
+        if (active) setEvents(Array.isArray(items) ? items : []);
+      } catch {
+        if (active) setEvents([]);
+      } finally {
+        if (active) setLoadingEvents(false);
+      }
+    };
+    loadEvents();
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  useEffect(() => {
     if (isEdit && selectedWebsite) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
+      const incomingFormConfig = selectedWebsite.formConfig || {};
       setFormData({
         name: selectedWebsite.name || "",
         domain: selectedWebsite.domain || "",
@@ -138,10 +183,52 @@ const WebsiteForm = ({ isEdit = false }) => {
           sortOrder: f.sortOrder ?? 0,
           isActive: f.isActive !== false,
         })),
-        formConfig: selectedWebsite.formConfig || {},
+        formConfig: {
+          ...DEFAULT_FORM_CONFIG,
+          ...incomingFormConfig,
+          eventConfig: {
+            ...DEFAULT_FORM_CONFIG.eventConfig,
+            ...(incomingFormConfig.eventConfig || {}),
+            eventId: incomingFormConfig.eventConfig?.eventId
+              ? String(incomingFormConfig.eventConfig.eventId)
+              : "",
+            defaultTicketTypeId: incomingFormConfig.eventConfig
+              ?.defaultTicketTypeId
+              ? String(incomingFormConfig.eventConfig.defaultTicketTypeId)
+              : "",
+          },
+        },
       });
     }
   }, [isEdit, selectedWebsite]);
+
+  useEffect(() => {
+    let active = true;
+    const eventId = formData.formConfig?.eventConfig?.eventId;
+    if (!eventId) {
+      setTicketTypes([]);
+      return;
+    }
+
+    const loadTicketTypes = async () => {
+      setLoadingTicketTypes(true);
+      try {
+        const response = await ticketTypesService.getAll(eventId);
+        const items =
+          response?.data?.ticketTypes || response?.ticketTypes || [];
+        if (active) setTicketTypes(Array.isArray(items) ? items : []);
+      } catch {
+        if (active) setTicketTypes([]);
+      } finally {
+        if (active) setLoadingTicketTypes(false);
+      }
+    };
+
+    loadTicketTypes();
+    return () => {
+      active = false;
+    };
+  }, [formData.formConfig?.eventConfig?.eventId]);
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -162,6 +249,35 @@ const WebsiteForm = ({ isEdit = false }) => {
         rateLimit: {
           ...prev.rateLimit,
           [field]: parseInt(value, 10) || 0,
+        },
+      }));
+    } else if (name.startsWith("formConfig.eventConfig.")) {
+      const field = name.split(".")[2];
+      setFormData((prev) => ({
+        ...prev,
+        formConfig: {
+          ...prev.formConfig,
+          eventConfig: {
+            ...(prev.formConfig?.eventConfig || {}),
+            [field]:
+              type === "checkbox"
+                ? checked
+                : field === "defaultQuantity"
+                  ? parseInt(value, 10) || 1
+                  : value,
+          },
+        },
+      }));
+    } else if (name === "formConfig.submissionTarget") {
+      setFormData((prev) => ({
+        ...prev,
+        formConfig: {
+          ...prev.formConfig,
+          submissionTarget: value,
+          eventConfig: {
+            ...DEFAULT_FORM_CONFIG.eventConfig,
+            ...(prev.formConfig?.eventConfig || {}),
+          },
         },
       }));
     } else {
@@ -208,9 +324,28 @@ const WebsiteForm = ({ isEdit = false }) => {
       toast.error("Domain is required");
       return;
     }
+    if (
+      formData.formConfig?.submissionTarget === "event_registration" &&
+      !formData.formConfig?.eventConfig?.eventId
+    ) {
+      toast.error("Please select an event for event registration forms");
+      return;
+    }
 
     const submitData = {
       ...formData,
+      formConfig: {
+        ...formData.formConfig,
+        eventConfig: {
+          ...formData.formConfig?.eventConfig,
+          eventId: formData.formConfig?.eventConfig?.eventId || null,
+          defaultTicketTypeId:
+            formData.formConfig?.eventConfig?.defaultTicketTypeId || null,
+          defaultQuantity:
+            parseInt(formData.formConfig?.eventConfig?.defaultQuantity, 10) ||
+            1,
+        },
+      },
       ipWhitelist: formData.ipWhitelist
         ? formData.ipWhitelist
             .split(",")
@@ -257,7 +392,7 @@ const WebsiteForm = ({ isEdit = false }) => {
           <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
             {isEdit
               ? "Update website configuration"
-              : "Configure a new website as a lead source"}
+              : "Configure a new website form for leads or events"}
           </p>
         </div>
       </div>
@@ -307,7 +442,7 @@ const WebsiteForm = ({ isEdit = false }) => {
                     className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                   />
                   <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                    Active (accepting leads)
+                    Active (accepting submissions)
                   </span>
                 </label>
               </div>
@@ -322,6 +457,105 @@ const WebsiteForm = ({ isEdit = false }) => {
                 rows={2}
               />
             </div>
+          </div>
+
+          <div className="border-t border-gray-200 pt-6 dark:border-gray-700">
+            <h3 className="mb-4 text-lg font-semibold text-gray-900 dark:text-white">
+              Submission Target
+            </h3>
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <Select
+                label="Form Purpose"
+                name="formConfig.submissionTarget"
+                value={formData.formConfig?.submissionTarget || "lead"}
+                onChange={handleChange}
+                options={SUBMISSION_TARGET_OPTIONS}
+              />
+            </div>
+
+            {formData.formConfig?.submissionTarget === "event_registration" && (
+              <div className="mt-4 space-y-4 rounded-lg border border-blue-100 bg-blue-50/60 p-4 dark:border-blue-900/40 dark:bg-blue-900/10">
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                  <Select
+                    label={loadingEvents ? "Event (loading...)" : "Event *"}
+                    name="formConfig.eventConfig.eventId"
+                    value={formData.formConfig?.eventConfig?.eventId || ""}
+                    onChange={handleChange}
+                    options={[
+                      { value: "", label: "Select an event" },
+                      ...events.map((event) => ({
+                        value: event._id,
+                        label: event.name,
+                      })),
+                    ]}
+                  />
+                  <Select
+                    label={
+                      loadingTicketTypes
+                        ? "Default Ticket (loading...)"
+                        : "Default Ticket Type"
+                    }
+                    name="formConfig.eventConfig.defaultTicketTypeId"
+                    value={
+                      formData.formConfig?.eventConfig?.defaultTicketTypeId ||
+                      ""
+                    }
+                    onChange={handleChange}
+                    options={[
+                      { value: "", label: "Auto-select first active ticket" },
+                      ...ticketTypes.map((ticket) => ({
+                        value: ticket._id,
+                        label: `${ticket.name} (${ticket.price || 0} ${ticket.currency || "INR"})`,
+                      })),
+                    ]}
+                  />
+                  <Input
+                    label="Default Quantity"
+                    name="formConfig.eventConfig.defaultQuantity"
+                    type="number"
+                    min={1}
+                    max={20}
+                    value={
+                      formData.formConfig?.eventConfig?.defaultQuantity || 1
+                    }
+                    onChange={handleChange}
+                  />
+                </div>
+
+                <div className="space-y-3">
+                  <label className="flex cursor-pointer items-center gap-2">
+                    <input
+                      type="checkbox"
+                      name="formConfig.eventConfig.allowTicketSelection"
+                      checked={
+                        formData.formConfig?.eventConfig
+                          ?.allowTicketSelection ?? true
+                      }
+                      onChange={handleChange}
+                      className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                    />
+                    <span className="text-sm text-gray-700 dark:text-gray-300">
+                      Allow visitor to choose ticket type
+                    </span>
+                  </label>
+                  <label className="flex cursor-pointer items-center gap-2">
+                    <input
+                      type="checkbox"
+                      name="formConfig.eventConfig.allowQuantitySelection"
+                      checked={
+                        formData.formConfig?.eventConfig
+                          ?.allowQuantitySelection ?? true
+                      }
+                      onChange={handleChange}
+                      className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                    />
+                    <span className="text-sm text-gray-700 dark:text-gray-300">
+                      Allow visitor to change quantity
+                    </span>
+                  </label>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Products / Services */}

@@ -72,10 +72,10 @@ const MarketingManagerRegistrationPage = () => {
             <UserPlus className="h-7 w-7 text-white" />
           </div>
           <h1 className="text-2xl font-bold text-white">
-            Register Marketing Manager
+            Join Orbinest as Marketing Manager
           </h1>
           <p className="mt-1 text-sm text-slate-300">
-            Create your marketing manager account
+            Create your workspace-linked marketing account
           </p>
         </div>
 
@@ -136,7 +136,7 @@ const MarketingManagerRegistrationPage = () => {
           </div>
 
           <Button type="submit" fullWidth loading={isSubmitting}>
-            Register
+            Join Orbinest
           </Button>
         </form>
 

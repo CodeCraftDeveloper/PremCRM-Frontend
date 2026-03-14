@@ -138,6 +138,178 @@ export const eventsService = {
 };
 
 /**
+ * Event Ticket Types service
+ */
+export const ticketTypesService = {
+  getAll: async (eventId) => {
+    const response = await api.get(`/events/${eventId}/ticket-types`);
+    return response.data;
+  },
+
+  create: async (eventId, data) => {
+    const response = await api.post(`/events/${eventId}/ticket-types`, data);
+    return response.data;
+  },
+
+  update: async (eventId, ttId, data) => {
+    const response = await api.put(
+      `/events/${eventId}/ticket-types/${ttId}`,
+      data,
+    );
+    return response.data;
+  },
+
+  delete: async (eventId, ttId) => {
+    const response = await api.delete(
+      `/events/${eventId}/ticket-types/${ttId}`,
+    );
+    return response.data;
+  },
+};
+
+/**
+ * Event Registrations service
+ */
+export const eventRegistrationsService = {
+  getAll: async (eventId, params) => {
+    const response = await api.get(`/events/${eventId}/registrations`, {
+      params,
+    });
+    return response.data;
+  },
+
+  getOne: async (eventId, regId) => {
+    const response = await api.get(`/events/${eventId}/registrations/${regId}`);
+    return response.data;
+  },
+
+  getStats: async (eventId) => {
+    const response = await api.get(`/events/${eventId}/registrations/stats`);
+    return response.data;
+  },
+
+  getReport: async (eventId, params) => {
+    const response = await api.get(`/events/${eventId}/registrations/report`, {
+      params,
+    });
+    return response.data;
+  },
+
+  updateStatus: async (eventId, regId, status) => {
+    const response = await api.patch(
+      `/events/${eventId}/registrations/${regId}/status`,
+      { status },
+    );
+    return response.data;
+  },
+
+  updateLifecycleStatus: async (eventId, regId, payload) => {
+    const response = await api.patch(
+      `/events/${eventId}/registrations/${regId}/status`,
+      payload,
+    );
+    return response.data;
+  },
+
+  refund: async (eventId, regId, payload) => {
+    const response = await api.patch(
+      `/events/${eventId}/registrations/${regId}/refund`,
+      payload,
+    );
+    return response.data;
+  },
+
+  checkIn: async (eventId, qrToken) => {
+    const response = await api.post(`/events/${eventId}/checkin`, { qrToken });
+    return response.data;
+  },
+
+  getWaitlist: async (eventId, params) => {
+    const response = await api.get(`/events/${eventId}/waitlist`, { params });
+    return response.data;
+  },
+
+  getCoupons: async (eventId) => {
+    const response = await api.get(`/events/${eventId}/coupons`);
+    return response.data;
+  },
+
+  createCoupon: async (eventId, payload) => {
+    const response = await api.post(`/events/${eventId}/coupons`, payload);
+    return response.data;
+  },
+
+  updateCoupon: async (eventId, couponId, payload) => {
+    const response = await api.patch(
+      `/events/${eventId}/coupons/${couponId}`,
+      payload,
+    );
+    return response.data;
+  },
+};
+
+/**
+ * Event Domain service (normalized orders/payments/check-ins)
+ */
+export const eventDomainService = {
+  getOverview: async (eventId) => {
+    const response = await api.get(`/events/${eventId}/domain/overview`);
+    return response.data;
+  },
+
+  getOrders: async (eventId, params) => {
+    const response = await api.get(`/events/${eventId}/orders`, { params });
+    return response.data;
+  },
+
+  getPayments: async (eventId, params) => {
+    const response = await api.get(`/events/${eventId}/payments`, { params });
+    return response.data;
+  },
+
+  getCheckIns: async (eventId, params) => {
+    const response = await api.get(`/events/${eventId}/checkins`, { params });
+    return response.data;
+  },
+};
+
+/**
+ * Public event registration service (no auth)
+ */
+export const publicEventService = {
+  listEvents: async (tenantSlug) => {
+    const response = await api.get(`/public/events/${tenantSlug}`);
+    return response.data;
+  },
+
+  getEvent: async (tenantSlug, eventId) => {
+    const response = await api.get(`/public/events/${tenantSlug}/${eventId}`);
+    return response.data;
+  },
+
+  register: async (tenantSlug, eventId, data) => {
+    const response = await api.post(
+      `/public/events/${tenantSlug}/${eventId}/register`,
+      data,
+    );
+    return response.data;
+  },
+
+  getRegistrationByQrToken: async (qrToken) => {
+    const response = await api.get(`/public/registrations/${qrToken}`);
+    return response.data;
+  },
+
+  joinWaitlist: async (tenantSlug, eventId, ticketTypeId, data) => {
+    const response = await api.post(
+      `/public/events/${tenantSlug}/${eventId}/ticket-types/${ticketTypeId}/waitlist`,
+      data,
+    );
+    return response.data;
+  },
+};
+
+/**
  * Clients service
  */
 export const clientsService = {

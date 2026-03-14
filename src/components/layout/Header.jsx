@@ -63,13 +63,13 @@ const Header = () => {
         >
           <Menu className="h-5 w-5 text-gray-600 dark:text-gray-300" />
         </button>
-        <h1 className="text-sm md:text-lg font-semibold text-gray-800 dark:text-white truncate">
+          <h1 className="text-sm md:text-lg font-semibold text-gray-800 dark:text-white truncate">
           {user?.role === "superadmin"
-            ? "SuperAdmin Panel"
+            ? "Orbinest Control"
             : user?.role === "admin"
-              ? "Admin Panel"
-              : "Marketing Dashboard"}
-        </h1>
+              ? "Orbinest Console"
+              : "Orbinest Workspace"}
+          </h1>
       </div>
 
       {/* Right side */}

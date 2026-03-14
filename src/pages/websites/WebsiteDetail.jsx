@@ -107,8 +107,45 @@ const WebsiteDetail = () => {
     import.meta.env.VITE_API_URL || `${window.location.origin}/api`
   ).replace(/\/api.*$/, "");
 
+  const isEventRegistrationMode =
+    website.formConfig?.submissionTarget === "event_registration";
+  const defaultEventTicketTypeId = website.formConfig?.eventConfig
+    ?.defaultTicketTypeId
+    ? String(website.formConfig.eventConfig.defaultTicketTypeId)
+    : "";
+  const defaultEventQuantity = Math.max(
+    1,
+    Number(website.formConfig?.eventConfig?.defaultQuantity || 1),
+  );
+  const submissionEntityNoun = isEventRegistrationMode
+    ? "event registration"
+    : "lead";
+  const integrationModeTitle = isEventRegistrationMode
+    ? "Event Registration"
+    : "Lead Form";
+  const submissionSuccessMessage = isEventRegistrationMode
+    ? "Registration submitted successfully!"
+    : "Lead submitted successfully!";
+  const submissionCreatedMessage = isEventRegistrationMode
+    ? "Registration created!"
+    : "Lead created!";
+  const wordpressShortcode = isEventRegistrationMode
+    ? "event_registration_form"
+    : "lead_form";
+  const wordpressRenderFunction = isEventRegistrationMode
+    ? "render_event_registration_form"
+    : "render_lead_form";
+  const wordpressFormId = isEventRegistrationMode
+    ? "crm-registration-form"
+    : "crm-lead-form";
+  const wordpressMessageId = isEventRegistrationMode
+    ? "crm-registration-msg"
+    : "crm-lead-msg";
+  const publicSchemaEndpoint = `${apiBaseUrl}/api/public/form-schema`;
+  const publicSubmitEndpoint = `${apiBaseUrl}/api/public/lead`;
+
   const _productsEndpoint = `${apiBaseUrl}/api/public/products`;
-  const _formSchemaEndpoint = `${apiBaseUrl}/api/public/form-schema`;
+  const _formSchemaEndpoint = publicSchemaEndpoint;
   const hasProducts = website.products && website.products.length > 0;
   const _productsJSON = hasProducts ? JSON.stringify(website.products) : "[]";
   const _hasFormFields = website.formFields && website.formFields.length > 0;
@@ -117,15 +154,17 @@ const WebsiteDetail = () => {
     javascript: {
       label: "JavaScript",
       lang: "html",
-      code: `<!-- Lead Form Integration (dynamic form schema + attachments) -->
+      code: `<!-- ${integrationModeTitle} Integration (dynamic form schema + attachments) -->
 <script>
   const API_BASE = '${apiBaseUrl}';
+  const API_URL  = '${publicSubmitEndpoint}';
+  const SCHEMA_URL = '${publicSchemaEndpoint}';
   const API_KEY  = 'YOUR_API_KEY';
 
   // 1. Load form schema (products + custom fields)
   async function loadFormSchema() {
     try {
-      const res = await fetch(API_BASE + '/api/public/form-schema', {
+      const res = await fetch(SCHEMA_URL, {
         headers: { 'x-api-key': API_KEY }
       });
       const { data } = await res.json();
@@ -209,8 +248,8 @@ const WebsiteDetail = () => {
     } catch (err) { console.error('Failed to load form schema:', err); }
   }
 
-  // 2. Submit the lead (gathers custom fields automatically)
-  async function submitLead(formValues, fileInputId = 'attachments') {
+  // 2. Submit the form payload
+  async function submitForm(formValues, fileInputId = 'attachments') {
     const payload = new FormData();
     payload.append('firstName', formValues.firstName || '');
     payload.append('lastName', formValues.lastName || '');
@@ -220,6 +259,12 @@ const WebsiteDetail = () => {
     payload.append('company', formValues.company || '');
     payload.append('productInterest', formValues.productInterest || '');
     payload.append('source', '${website.name}');
+  ${
+    isEventRegistrationMode
+      ? `    payload.append('ticketTypeId', '${defaultEventTicketTypeId}');
+    payload.append('quantity', '${defaultEventQuantity}');`
+      : ""
+  }
 
     // Collect custom fields
     const customFields = {};
@@ -239,7 +284,7 @@ const WebsiteDetail = () => {
         .forEach((file) => payload.append('attachments', file));
     }
 
-    const response = await fetch(API_BASE + '/api/public/lead', {
+    const response = await fetch(API_URL, {
       method: 'POST',
       headers: { 'x-api-key': API_KEY },
       body: payload
@@ -257,7 +302,7 @@ const WebsiteDetail = () => {
   <input name="email" />
   <div id="customFieldsContainer"></div>
   <input type="file" id="attachments" multiple />
-  <button onclick="submitLead({
+  <button onclick="submitForm({
     firstName: document.querySelector('[name=firstName]').value,
     email: document.querySelector('[name=email]').value,
     productInterest: document.getElementById('productInterest').value
@@ -269,11 +314,11 @@ const WebsiteDetail = () => {
       lang: "jsx",
       code: `import { useState, useEffect } from 'react';
 
-const API_URL = '${apiBaseUrl}/api/public/lead';
-const SCHEMA_URL = '${apiBaseUrl}/api/public/form-schema';
+const API_URL = '${publicSubmitEndpoint}';
+const SCHEMA_URL = '${publicSchemaEndpoint}';
 const API_KEY = 'YOUR_API_KEY';
 
-export default function LeadForm() {
+export default function PublicForm() {
   const [form, setForm] = useState({
     firstName: '', lastName: '', email: '',
     phone: '', message: '', company: '', productInterest: ''
@@ -309,6 +354,12 @@ export default function LeadForm() {
       const payload = new FormData();
       Object.entries(form).forEach(([k, v]) => payload.append(k, v));
       payload.append('source', '${website.name}');
+    ${
+      isEventRegistrationMode
+        ? `      payload.append('ticketTypeId', '${defaultEventTicketTypeId}');
+      payload.append('quantity', '${defaultEventQuantity}');`
+        : ""
+    }
       payload.append('customFields', JSON.stringify(customValues));
       files.slice(0, 5).forEach((f) => payload.append('attachments', f));
 
@@ -319,7 +370,7 @@ export default function LeadForm() {
       });
       setResult(await res.json());
     } catch (err) {
-      console.error('Lead submit error:', err);
+      console.error('Form submit error:', err);
     } finally {
       setSubmitting(false);
     }
@@ -415,7 +466,7 @@ export default function LeadForm() {
       <button type="submit" disabled={submitting}>
         {submitting ? 'Sending...' : 'Submit'}
       </button>
-      {result && <p>Lead submitted successfully!</p>}
+      {result && <p>${submissionSuccessMessage}</p>}
     </form>
   );
 }`,
@@ -424,8 +475,8 @@ export default function LeadForm() {
       label: "PHP (cURL)",
       lang: "php",
       code: `<?php
-$apiUrl      = '${apiBaseUrl}/api/public/lead';
-$schemaUrl   = '${apiBaseUrl}/api/public/form-schema';
+$apiUrl      = '${publicSubmitEndpoint}';
+$schemaUrl   = '${publicSchemaEndpoint}';
 $apiKey      = 'YOUR_API_KEY';
 
 // ---------- Fetch Form Schema (products + custom fields) ----------
@@ -474,7 +525,7 @@ $formFields = $schema['formFields'];
 //   <?php endif; ?>
 // <?php endforeach; ?>
 
-// ---------- Submit Lead ----------
+// ---------- Submit ${integrationModeTitle} ----------
 $fields = [
     'firstName'       => $_POST['firstName'] ?? '',
     'lastName'        => $_POST['lastName'] ?? '',
@@ -527,7 +578,7 @@ $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
 curl_close($ch);
 
 $result = json_decode($response, true);
-echo $httpCode === 201 ? 'Lead created!' : 'Error: ' . ($result['message'] ?? 'Unknown');
+echo $httpCode === 201 ? '${submissionCreatedMessage}' : 'Error: ' . ($result['message'] ?? 'Unknown');
 ?>`,
     },
     python: {
@@ -535,8 +586,8 @@ echo $httpCode === 201 ? 'Lead created!' : 'Error: ' . ($result['message'] ?? 'U
       lang: "python",
       code: `import requests, json
 
-API_URL      = '${apiBaseUrl}/api/public/lead'
-SCHEMA_URL   = '${apiBaseUrl}/api/public/form-schema'
+API_URL      = '${publicSubmitEndpoint}'
+SCHEMA_URL   = '${publicSchemaEndpoint}'
 API_KEY      = 'YOUR_API_KEY'
 HEADERS      = {'x-api-key': API_KEY}
 
@@ -552,10 +603,10 @@ def get_form_schema() -> dict:
     }
 
 
-def submit_lead(form_data: dict, custom_fields: dict = None,
+def submit_form(form_data: dict, custom_fields: dict = None,
                 file_paths: list[str] | None = None):
     """
-    Submit a lead to the CRM.
+    Submit a public form payload.
 
     form_data keys: firstName, lastName, email, phone,
                     message, company, productInterest
@@ -571,6 +622,12 @@ def submit_lead(form_data: dict, custom_fields: dict = None,
         'company':         form_data.get('company', ''),
         'productInterest': form_data.get('productInterest', ''),
         'source':          '${website.name}',
+    }
+    ${
+      isEventRegistrationMode
+        ? `    payload['ticketTypeId'] = '${defaultEventTicketTypeId}'
+      payload['quantity'] = ${defaultEventQuantity}`
+        : ""
     }
 
     if custom_fields:
@@ -598,7 +655,7 @@ schema = get_form_schema()
 print('Products:', schema['products'])
 print('Custom fields:', [f['label'] for f in schema['formFields']])
 
-result = submit_lead(
+result = submit_form(
     {'firstName': 'John', 'email': 'john@example.com',
      'productInterest': schema['products'][0] if schema['products'] else ''},
     custom_fields={'company_address': '123 Main St'},
@@ -610,7 +667,7 @@ print(result)`,
       label: "cURL",
       lang: "bash",
       code: `# ---------- 1. Fetch form schema (products + custom fields) ----------
-curl -s '${apiBaseUrl}/api/public/form-schema' \\
+    curl -s '${publicSchemaEndpoint}' \\
   -H 'x-api-key: YOUR_API_KEY' | jq '.data'
 
 # Example response:
@@ -624,8 +681,8 @@ curl -s '${apiBaseUrl}/api/public/form-schema' \\
 #   ]
 # }
 
-# ---------- 2. Submit a lead with custom fields ----------
-curl -X POST '${apiBaseUrl}/api/public/lead' \\
+# ---------- 2. Submit a ${isEventRegistrationMode ? "registration" : "lead"} with custom fields ----------
+curl -X POST '${publicSubmitEndpoint}' \\
   -H 'x-api-key: YOUR_API_KEY' \\
   -F 'firstName=John' \\
   -F 'lastName=Doe' \\
@@ -635,6 +692,13 @@ curl -X POST '${apiBaseUrl}/api/public/lead' \\
   -F 'company=Acme Inc' \\
   -F 'productInterest=Enterprise Plan' \\
   -F 'source=${website.name}' \\
+${
+  isEventRegistrationMode
+    ? `  -F 'ticketTypeId=${defaultEventTicketTypeId}' \\
+  -F 'quantity=${defaultEventQuantity}' \\
+`
+    : ""
+}
   -F 'customFields={"company_address":"123 Main St","budget_range":"10k-50k"}' \\
   -F 'attachments=@/path/to/file1.pdf' \\
   -F 'attachments=@/path/to/file2.pdf'`,
@@ -646,8 +710,8 @@ curl -X POST '${apiBaseUrl}/api/public/lead' \\
 using System.Net.Http.Headers;
 using System.Text.Json;
 
-var apiUrl    = "${apiBaseUrl}/api/public/lead";
-var schemaUrl = "${apiBaseUrl}/api/public/form-schema";
+var apiUrl    = "${publicSubmitEndpoint}";
+var schemaUrl = "${publicSchemaEndpoint}";
 var apiKey    = "YOUR_API_KEY";
 
 // ---------- Fetch Form Schema ----------
@@ -666,8 +730,8 @@ async Task<(List<string> Products, JsonElement FormFields)> GetFormSchemaAsync()
     return (products, formFields);
 }
 
-// ---------- Submit Lead ----------
-async Task<string> SubmitLeadAsync(
+// ---------- Submit ${integrationModeTitle} ----------
+async Task<string> SubmitFormAsync(
     Dictionary<string, string> formData,
     Dictionary<string, string>? customFields = null,
     List<string>? filePaths = null)
@@ -684,6 +748,12 @@ async Task<string> SubmitLeadAsync(
     content.Add(new StringContent(
         formData.GetValueOrDefault("productInterest", "")), "productInterest");
     content.Add(new StringContent("${website.name}"), "source");
+  ${
+    isEventRegistrationMode
+      ? `    content.Add(new StringContent("${defaultEventTicketTypeId}"), "ticketTypeId");
+    content.Add(new StringContent("${defaultEventQuantity}"), "quantity");`
+      : ""
+  }
 
     if (customFields is not null)
     {
@@ -714,7 +784,7 @@ var (products, formFields) = await GetFormSchemaAsync();
 Console.WriteLine("Products: " + string.Join(", ", products));
 Console.WriteLine("Custom fields: " + formFields.GetArrayLength() + " defined");
 
-var result = await SubmitLeadAsync(
+var result = await SubmitFormAsync(
     new Dictionary<string, string>
     {
         ["firstName"]       = "John",
@@ -731,17 +801,19 @@ Console.WriteLine(result);`,
     jquery: {
       label: "jQuery",
       lang: "html",
-      code: `<!-- Lead Form Integration (jQuery + dynamic form schema) -->
+      code: `<!-- ${integrationModeTitle} Integration (jQuery + dynamic form schema) -->
 <script src="https://code.jquery.com/jquery-3.7.1.min.js"><\\/script>
 <script>
   var API_BASE = '${apiBaseUrl}';
+  var API_URL = '${publicSubmitEndpoint}';
+  var SCHEMA_URL = '${publicSchemaEndpoint}';
   var API_KEY  = 'YOUR_API_KEY';
   var _formFields = []; // store for submit
 
   // Load form schema: products + custom fields
   $(function() {
     $.ajax({
-      url: API_BASE + '/api/public/form-schema',
+      url: SCHEMA_URL,
       headers: { 'x-api-key': API_KEY },
       success: function(res) {
         var data = res.data || {};
@@ -788,7 +860,7 @@ Console.WriteLine(result);`,
     });
   });
 
-  function submitLead() {
+  function submitForm() {
     var formData = new FormData();
     formData.append('firstName', $('input[name="firstName"]').val() || '');
     formData.append('lastName',  $('input[name="lastName"]').val()  || '');
@@ -798,6 +870,12 @@ Console.WriteLine(result);`,
     formData.append('company',   $('input[name="company"]').val()   || '');
     formData.append('productInterest', $('#productInterest').val() || '');
     formData.append('source', '${website.name}');
+  ${
+    isEventRegistrationMode
+      ? `    formData.append('ticketTypeId', '${defaultEventTicketTypeId}');
+    formData.append('quantity', '${defaultEventQuantity}');`
+      : ""
+  }
 
     // Collect custom field values
     var customFields = {};
@@ -814,14 +892,14 @@ Console.WriteLine(result);`,
     });
 
     $.ajax({
-      url: API_BASE + '/api/public/lead',
+      url: API_URL,
       type: 'POST',
       data: formData,
       processData: false,
       contentType: false,
       headers: { 'x-api-key': API_KEY },
       success: function(res) {
-        alert('Lead submitted successfully!');
+        alert('${submissionSuccessMessage}');
         console.log(res);
       },
       error: function(xhr) {
@@ -838,7 +916,7 @@ Console.WriteLine(result);`,
   <input name="email" />
   <div id="customFieldsContainer"></div>
   <input type="file" id="attachments" multiple />
-  <button onclick="submitLead()">Submit</button>
+  <button onclick="submitForm()">Submit</button>
 -->`,
     },
     wordpress: {
@@ -846,15 +924,16 @@ Console.WriteLine(result);`,
       lang: "php",
       code: `<?php
 /**
- * WordPress Lead Form Shortcode (dynamic form schema)
- * Usage: [lead_form]
+ * WordPress ${integrationModeTitle} Shortcode (dynamic form schema)
+ * Usage: [${wordpressShortcode}]
  * Add this to your theme's functions.php or a custom plugin.
  */
 
-add_shortcode('lead_form', 'render_lead_form');
+add_shortcode('${wordpressShortcode}', '${wordpressRenderFunction}');
 
-function render_lead_form() {
-    $schemaUrl = '${apiBaseUrl}/api/public/form-schema';
+function ${wordpressRenderFunction}() {
+    $schemaUrl = '${publicSchemaEndpoint}';
+    $apiUrl    = '${publicSubmitEndpoint}';
     $apiKey    = 'YOUR_API_KEY';
 
     // Fetch full form schema
@@ -871,7 +950,7 @@ function render_lead_form() {
 
     ob_start();
     ?>
-    <form id="crm-lead-form" enctype="multipart/form-data">
+    <form id="${wordpressFormId}" enctype="multipart/form-data">
       <input name="firstName" placeholder="First Name" required />
       <input name="lastName"  placeholder="Last Name" />
       <input name="email" type="email" placeholder="Email" required />
@@ -932,10 +1011,10 @@ function render_lead_form() {
 
       <input type="file" name="attachments[]" multiple />
       <button type="submit">Submit</button>
-      <p id="crm-lead-msg" style="display:none;"></p>
+      <p id="${wordpressMessageId}" style="display:none;"></p>
     </form>
     <script>
-      document.getElementById('crm-lead-form')
+      document.getElementById('${wordpressFormId}')
         .addEventListener('submit', async function(e) {
           e.preventDefault();
           var fd = new FormData(this);
@@ -957,15 +1036,21 @@ function render_lead_form() {
           Array.from(files).slice(0,5).forEach(f => fd.append('attachments', f));
 
           try {
-            var res = await fetch('${apiBaseUrl}/api/public/lead', {
+            ${
+              isEventRegistrationMode
+                ? `fd.append('ticketTypeId', '${defaultEventTicketTypeId}');
+            fd.append('quantity', '${defaultEventQuantity}');`
+                : ""
+            }
+            var res = await fetch($apiUrl, {
               method: 'POST',
               headers: { 'x-api-key': '<?= $apiKey ?>' },
               body: fd
             });
             var data = await res.json();
-            var msg = document.getElementById('crm-lead-msg');
+            var msg = document.getElementById('${wordpressMessageId}');
             msg.style.display = 'block';
-            msg.textContent = res.ok ? 'Thank you! We will contact you soon.'
+            msg.textContent = res.ok ? '${submissionSuccessMessage}'
                                      : ('Error: ' + (data.message || 'Unknown'));
           } catch(err) {
             console.error(err);
@@ -1311,6 +1396,12 @@ function render_lead_form() {
           </Button>
         </div>
 
+        <p className="mt-3 text-xs text-gray-500 dark:text-gray-400">
+          Mode: <span className="font-semibold">{integrationModeTitle}</span>.
+          Submissions create a {submissionEntityNoun} using{" "}
+          <span className="font-mono">{publicSubmitEndpoint}</span>.
+        </p>
+
         {/* Language Tabs */}
         <div className="mt-4 flex flex-wrap gap-1.5 border-b border-gray-200 pb-3 dark:border-gray-700">
           {Object.entries(integrationSnippets).map(([key, { label }]) => (
@@ -1367,8 +1458,8 @@ function render_lead_form() {
       >
         <p className="text-gray-600 dark:text-gray-300">
           Are you sure you want to delete <strong>{website.name}</strong>? This
-          will disable lead collection from this source. Existing leads will NOT
-          be deleted.
+          will disable public form submissions from this source. Existing
+          records will NOT be deleted.
         </p>
         <div className="mt-6 flex justify-end gap-3">
           <Button variant="outline" onClick={() => setDeleteModalOpen(false)}>

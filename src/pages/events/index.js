@@ -1,2 +1,9 @@
 export { default as EventsList } from "./EventsList";
 export { default as EventForm } from "./EventForm";
+export { default as EventDetailPage } from "./EventDetailPage";
+export { default as PublicEventListPage } from "./PublicEventListPage";
+export { default as PublicEventDetailPage } from "./PublicEventDetailPage";
+export { default as RegistrationConfirmationPage } from "./RegistrationConfirmationPage";
+export { default as EventRegistrationsPage } from "./EventRegistrationsPage";
+export { default as TicketTypesPage } from "./TicketTypesPage";
+export { default as CheckinPage } from "./CheckinPage";

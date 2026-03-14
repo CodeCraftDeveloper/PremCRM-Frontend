@@ -96,7 +96,7 @@ const SuperAdminSidebar = () => {
         <div className="flex h-16 items-center justify-between border-b border-gray-800 px-4">
           <div className="flex items-center gap-2">
             <Shield className="h-7 w-7 text-violet-400" />
-            <span className="text-lg font-bold text-white">SuperAdmin</span>
+            <span className="text-lg font-bold text-white">Orbinest</span>
           </div>
           <button
             onClick={handleMobileClose}
@@ -118,7 +118,7 @@ const SuperAdminSidebar = () => {
           <div className="flex items-center gap-2">
             <Shield className="h-7 w-7 flex-shrink-0 text-violet-400" />
             {!sidebarCollapsed && (
-              <span className="text-lg font-bold text-white">SuperAdmin</span>
+              <span className="text-lg font-bold text-white">Orbinest</span>
             )}
           </div>
           <button

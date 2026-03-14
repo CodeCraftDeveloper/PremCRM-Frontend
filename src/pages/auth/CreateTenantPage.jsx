@@ -13,7 +13,7 @@ import {
   Fingerprint,
 } from "lucide-react";
 import toast from "react-hot-toast";
-import api from "../../services/api";
+import api, { setTokens } from "../../services/api";
 import { getMe } from "../../store/slices/authSlice";
 
 const createTenantSchema = z.object({
@@ -64,7 +64,6 @@ const CreateTenantPage = () => {
       // Store tokens in memory for Bearer auth (cross-origin)
       const resData = bootstrapRes?.data?.data;
       if (resData?.accessToken) {
-        const { setTokens } = await import("../../services/api");
         setTokens(resData.accessToken, resData.refreshToken);
       }
 
@@ -97,10 +96,10 @@ const CreateTenantPage = () => {
             <Building2 className="h-8 w-8 text-white" />
           </div>
           <h1 className="text-2xl font-bold tracking-tight text-white">
-            Create Tenant
+            Create Orbinest Workspace
           </h1>
           <p className="mt-2 text-sm text-slate-300">
-            Create a workspace and link it to a specific company
+            Launch your event, registration, and CRM workspace
           </p>
         </div>
 
@@ -281,7 +280,7 @@ const CreateTenantPage = () => {
               disabled={isSubmitting}
               className="flex h-11 w-full items-center justify-center rounded-lg bg-violet-600 px-4 text-sm font-semibold text-white transition-colors hover:bg-violet-500 focus:outline-none focus:ring-2 focus:ring-violet-500/50 disabled:cursor-not-allowed disabled:opacity-50"
             >
-              {isSubmitting ? "Creating..." : "Create Tenant"}
+              {isSubmitting ? "Creating..." : "Create Workspace"}
             </button>
           </div>
         </form>

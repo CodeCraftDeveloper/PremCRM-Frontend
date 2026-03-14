@@ -1,13 +1,7 @@
 import { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { Link } from "react-router-dom";
-import {
-  Plus,
-  Edit,
-  Trash2,
-  MapPin,
-  Calendar,
-} from "lucide-react";
+import { Plus, Edit, Trash2, Eye, MapPin, Calendar } from "lucide-react";
 import {
   fetchEvents,
   deleteEvent,
@@ -166,6 +160,11 @@ const EventsList = ({ isAdmin = true }) => {
                   </span>
                 </div>
                 <div className="flex gap-2">
+                  <Link to={`${basePath}/events/${event._id}`}>
+                    <Button variant="ghost" size="sm" icon={Eye}>
+                      View details
+                    </Button>
+                  </Link>
                   {isAdmin && (
                     <>
                       <Link to={`${basePath}/events/${event._id}/edit`}>

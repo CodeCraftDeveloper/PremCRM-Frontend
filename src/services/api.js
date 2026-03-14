@@ -40,6 +40,17 @@ export const setTokens = (access, refresh) => {
   }
 };
 export const getAccessToken = () => _accessToken;
+export const buildApiUrl = (path = "") => {
+  const basePath = api.defaults.baseURL || "/api/v1";
+  const normalizedBase = basePath.startsWith("http")
+    ? basePath
+    : `${window.location.origin}${basePath.startsWith("/") ? "" : "/"}${basePath}`;
+
+  return new URL(
+    path.replace(/^\//, ""),
+    `${normalizedBase.replace(/\/+$/, "")}/`,
+  ).toString();
+};
 export const clearTokens = () => {
   _accessToken = null;
   _refreshToken = null;
