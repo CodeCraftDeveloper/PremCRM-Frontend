@@ -193,7 +193,7 @@ api.interceptors.response.use(
 
     // ── 5xx — Server error ───────────────────────────────────
     if (status >= 500) {
-      toast.error("Server error — please try again later.");
+      toast.error("Server error - please try again later.");
     }
 
     return Promise.reject(error);
@@ -201,3 +201,4 @@ api.interceptors.response.use(
 );
 
 export default api;
+

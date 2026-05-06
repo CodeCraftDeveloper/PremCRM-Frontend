@@ -26,6 +26,40 @@ const SUBMISSION_TARGET_OPTIONS = [
   { value: "event_registration", label: "Event Registration" },
 ];
 
+const BLOG_ELEMENT_TAG_OPTIONS = [
+  { value: "article", label: "article" },
+  { value: "section", label: "section" },
+  { value: "div", label: "div" },
+  { value: "span", label: "span" },
+  { value: "main", label: "main" },
+  { value: "header", label: "header" },
+  { value: "footer", label: "footer" },
+  { value: "aside", label: "aside" },
+  { value: "figure", label: "figure" },
+  { value: "figcaption", label: "figcaption" },
+  { value: "picture", label: "picture" },
+  { value: "h1", label: "h1" },
+  { value: "h2", label: "h2" },
+  { value: "h3", label: "h3" },
+  { value: "h4", label: "h4" },
+  { value: "h5", label: "h5" },
+  { value: "h6", label: "h6" },
+  { value: "p", label: "p" },
+  { value: "small", label: "small" },
+  { value: "strong", label: "strong" },
+  { value: "em", label: "em" },
+  { value: "time", label: "time" },
+  { value: "img", label: "img" },
+];
+
+const BLOG_TAG_SUGGESTIONS_ID = "blog-tag-suggestions";
+
+const BLOG_TEXT_ALIGN_OPTIONS = [
+  { value: "left", label: "Left" },
+  { value: "center", label: "Center" },
+  { value: "right", label: "Right" },
+];
+
 const DEFAULT_FORM_CONFIG = {
   submissionTarget: "lead",
   eventConfig: {
@@ -67,6 +101,122 @@ const DEFAULT_FORM_CONFIG = {
   },
 };
 
+const DEFAULT_BLOG_CONFIG = {
+  listing: {
+    visibleFields: {
+      title: true,
+      description: true,
+      category: true,
+      author: true,
+      publishedAt: true,
+      readingTime: true,
+      featuredImage: true,
+      tags: true,
+    },
+    elements: {
+      containerTag: "article",
+      titleTag: "h3",
+      descriptionTag: "p",
+      categoryTag: "span",
+      metaTag: "div",
+      imageTag: "img",
+    },
+    styles: {
+      backgroundColor: "#ffffff",
+      textColor: "#111827",
+      accentColor: "#4f46e5",
+      backgroundImage: "",
+      textAlign: "left",
+    },
+  },
+  detail: {
+    visibleFields: {
+      title: true,
+      content: true,
+      category: true,
+      author: true,
+      publishedAt: true,
+      featuredImage: true,
+      tags: true,
+    },
+    elements: {
+      containerTag: "article",
+      titleTag: "h1",
+      contentTag: "div",
+      categoryTag: "span",
+      metaTag: "div",
+      imageTag: "img",
+    },
+    styles: {
+      backgroundColor: "#ffffff",
+      textColor: "#111827",
+      accentColor: "#4f46e5",
+      backgroundImage: "",
+      textAlign: "left",
+    },
+  },
+};
+
+const mergeBlogConfig = (incoming = {}) => ({
+  listing: {
+    visibleFields: {
+      ...DEFAULT_BLOG_CONFIG.listing.visibleFields,
+      ...(incoming.listing?.visibleFields || {}),
+    },
+    elements: {
+      ...DEFAULT_BLOG_CONFIG.listing.elements,
+      ...(incoming.listing?.elements || {}),
+    },
+    styles: {
+      ...DEFAULT_BLOG_CONFIG.listing.styles,
+      ...(incoming.listing?.styles || {}),
+    },
+  },
+  detail: {
+    visibleFields: {
+      ...DEFAULT_BLOG_CONFIG.detail.visibleFields,
+      ...(incoming.detail?.visibleFields || {}),
+    },
+    elements: {
+      ...DEFAULT_BLOG_CONFIG.detail.elements,
+      ...(incoming.detail?.elements || {}),
+    },
+    styles: {
+      ...DEFAULT_BLOG_CONFIG.detail.styles,
+      ...(incoming.detail?.styles || {}),
+    },
+  },
+});
+
+const updateNestedValue = (target, path, value) => {
+  const [head, ...rest] = path;
+  if (!head) return target;
+
+  if (rest.length === 0) {
+    return {
+      ...target,
+      [head]: value,
+    };
+  }
+
+  return {
+    ...target,
+    [head]: updateNestedValue(target?.[head] || {}, rest, value),
+  };
+};
+
+const BlogTagInput = ({ label, name, value, onChange, placeholder }) => (
+  <Input
+    label={label}
+    name={name}
+    value={value}
+    onChange={onChange}
+    list={BLOG_TAG_SUGGESTIONS_ID}
+    placeholder={placeholder}
+    helperText="Type any valid HTML tag or choose one of the suggested tags."
+  />
+);
+
 const WebsiteForm = ({ isEdit = false }) => {
   const { id } = useParams();
   const dispatch = useDispatch();
@@ -96,6 +246,7 @@ const WebsiteForm = ({ isEdit = false }) => {
     isActive: true,
     products: [],
     formFields: [],
+    blogConfig: mergeBlogConfig(),
     formConfig: {
       ...DEFAULT_FORM_CONFIG,
       eventConfig: { ...DEFAULT_FORM_CONFIG.eventConfig },
@@ -183,6 +334,7 @@ const WebsiteForm = ({ isEdit = false }) => {
           sortOrder: f.sortOrder ?? 0,
           isActive: f.isActive !== false,
         })),
+        blogConfig: mergeBlogConfig(selectedWebsite.blogConfig),
         formConfig: {
           ...DEFAULT_FORM_CONFIG,
           ...incomingFormConfig,
@@ -279,6 +431,16 @@ const WebsiteForm = ({ isEdit = false }) => {
             ...(prev.formConfig?.eventConfig || {}),
           },
         },
+      }));
+    } else if (name.startsWith("blogConfig.")) {
+      const path = name.split(".").slice(1);
+      setFormData((prev) => ({
+        ...prev,
+        blogConfig: updateNestedValue(
+          prev.blogConfig,
+          path,
+          type === "checkbox" ? checked : value,
+        ),
       }));
     } else {
       setFormData((prev) => ({
@@ -617,6 +779,255 @@ const WebsiteForm = ({ isEdit = false }) => {
                 will be a free-text input in lead forms.
               </p>
             )}
+          </div>
+
+          <div className="border-t border-gray-200 pt-6 dark:border-gray-700">
+            <h3 className="mb-2 text-lg font-semibold text-gray-900 dark:text-white">
+              Blog Display Settings
+            </h3>
+            <p className="mb-4 text-xs text-gray-500 dark:text-gray-400">
+              Control which blog fields external websites should show and how
+              Orbinest suggests they render cards and detail pages.
+            </p>
+            <datalist id={BLOG_TAG_SUGGESTIONS_ID}>
+              {BLOG_ELEMENT_TAG_OPTIONS.map((option) => (
+                <option key={option.value} value={option.value} />
+              ))}
+            </datalist>
+
+            <div className="space-y-6">
+              <div className="rounded-lg border border-gray-200 p-4 dark:border-gray-700">
+                <h4 className="mb-3 text-sm font-semibold text-gray-900 dark:text-white">
+                  Listing Fields
+                </h4>
+                <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+                  {Object.entries(formData.blogConfig.listing.visibleFields).map(
+                    ([field, enabled]) => (
+                      <label
+                        key={field}
+                        className="flex cursor-pointer items-center gap-2 text-sm text-gray-700 dark:text-gray-300"
+                      >
+                        <input
+                          type="checkbox"
+                          name={`blogConfig.listing.visibleFields.${field}`}
+                          checked={enabled}
+                          onChange={handleChange}
+                          className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                        />
+                        <span className="capitalize">{field}</span>
+                      </label>
+                    ),
+                  )}
+                </div>
+
+                <p className="mt-4 text-xs text-gray-500 dark:text-gray-400">
+                  Use any HTML tag you want for external rendering. The
+                  suggestions are just shortcuts.
+                </p>
+
+                <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                  <BlogTagInput
+                    label="Card Container Tag"
+                    name="blogConfig.listing.elements.containerTag"
+                    value={formData.blogConfig.listing.elements.containerTag}
+                    onChange={handleChange}
+                    placeholder="article"
+                  />
+                  <BlogTagInput
+                    label="Title Tag"
+                    name="blogConfig.listing.elements.titleTag"
+                    value={formData.blogConfig.listing.elements.titleTag}
+                    onChange={handleChange}
+                    placeholder="h3"
+                  />
+                  <BlogTagInput
+                    label="Description Tag"
+                    name="blogConfig.listing.elements.descriptionTag"
+                    value={formData.blogConfig.listing.elements.descriptionTag}
+                    onChange={handleChange}
+                    placeholder="p"
+                  />
+                  <BlogTagInput
+                    label="Category Tag"
+                    name="blogConfig.listing.elements.categoryTag"
+                    value={formData.blogConfig.listing.elements.categoryTag}
+                    onChange={handleChange}
+                    placeholder="span"
+                  />
+                  <BlogTagInput
+                    label="Meta Tag"
+                    name="blogConfig.listing.elements.metaTag"
+                    value={formData.blogConfig.listing.elements.metaTag}
+                    onChange={handleChange}
+                    placeholder="div"
+                  />
+                  <BlogTagInput
+                    label="Image Tag"
+                    name="blogConfig.listing.elements.imageTag"
+                    value={formData.blogConfig.listing.elements.imageTag}
+                    onChange={handleChange}
+                    placeholder="img"
+                  />
+                </div>
+
+                <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
+                  <Input
+                    label="Card Background Color"
+                    name="blogConfig.listing.styles.backgroundColor"
+                    value={formData.blogConfig.listing.styles.backgroundColor}
+                    onChange={handleChange}
+                    placeholder="#ffffff"
+                  />
+                  <Input
+                    label="Card Text Color"
+                    name="blogConfig.listing.styles.textColor"
+                    value={formData.blogConfig.listing.styles.textColor}
+                    onChange={handleChange}
+                    placeholder="#111827"
+                  />
+                  <Input
+                    label="Accent Color"
+                    name="blogConfig.listing.styles.accentColor"
+                    value={formData.blogConfig.listing.styles.accentColor}
+                    onChange={handleChange}
+                    placeholder="#4f46e5"
+                  />
+                  <Select
+                    label="Text Align"
+                    name="blogConfig.listing.styles.textAlign"
+                    value={formData.blogConfig.listing.styles.textAlign}
+                    onChange={handleChange}
+                    options={BLOG_TEXT_ALIGN_OPTIONS}
+                  />
+                </div>
+
+                <div className="mt-4">
+                  <Input
+                    label="Card Background Image URL"
+                    name="blogConfig.listing.styles.backgroundImage"
+                    value={formData.blogConfig.listing.styles.backgroundImage}
+                    onChange={handleChange}
+                    placeholder="https://example.com/blog-card-bg.jpg"
+                  />
+                </div>
+              </div>
+
+              <div className="rounded-lg border border-gray-200 p-4 dark:border-gray-700">
+                <h4 className="mb-3 text-sm font-semibold text-gray-900 dark:text-white">
+                  Detail Page Fields
+                </h4>
+                <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+                  {Object.entries(formData.blogConfig.detail.visibleFields).map(
+                    ([field, enabled]) => (
+                      <label
+                        key={field}
+                        className="flex cursor-pointer items-center gap-2 text-sm text-gray-700 dark:text-gray-300"
+                      >
+                        <input
+                          type="checkbox"
+                          name={`blogConfig.detail.visibleFields.${field}`}
+                          checked={enabled}
+                          onChange={handleChange}
+                          className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                        />
+                        <span className="capitalize">{field}</span>
+                      </label>
+                    ),
+                  )}
+                </div>
+
+                <p className="mt-4 text-xs text-gray-500 dark:text-gray-400">
+                  Detail pages can use a completely different set of tags from
+                  listing cards if the external website needs it.
+                </p>
+
+                <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                  <BlogTagInput
+                    label="Detail Container Tag"
+                    name="blogConfig.detail.elements.containerTag"
+                    value={formData.blogConfig.detail.elements.containerTag}
+                    onChange={handleChange}
+                    placeholder="article"
+                  />
+                  <BlogTagInput
+                    label="Detail Title Tag"
+                    name="blogConfig.detail.elements.titleTag"
+                    value={formData.blogConfig.detail.elements.titleTag}
+                    onChange={handleChange}
+                    placeholder="h1"
+                  />
+                  <BlogTagInput
+                    label="Content Tag"
+                    name="blogConfig.detail.elements.contentTag"
+                    value={formData.blogConfig.detail.elements.contentTag}
+                    onChange={handleChange}
+                    placeholder="div"
+                  />
+                  <BlogTagInput
+                    label="Category Tag"
+                    name="blogConfig.detail.elements.categoryTag"
+                    value={formData.blogConfig.detail.elements.categoryTag}
+                    onChange={handleChange}
+                    placeholder="span"
+                  />
+                  <BlogTagInput
+                    label="Meta Tag"
+                    name="blogConfig.detail.elements.metaTag"
+                    value={formData.blogConfig.detail.elements.metaTag}
+                    onChange={handleChange}
+                    placeholder="div"
+                  />
+                  <BlogTagInput
+                    label="Image Tag"
+                    name="blogConfig.detail.elements.imageTag"
+                    value={formData.blogConfig.detail.elements.imageTag}
+                    onChange={handleChange}
+                    placeholder="img"
+                  />
+                </div>
+
+                <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
+                  <Input
+                    label="Detail Background Color"
+                    name="blogConfig.detail.styles.backgroundColor"
+                    value={formData.blogConfig.detail.styles.backgroundColor}
+                    onChange={handleChange}
+                    placeholder="#ffffff"
+                  />
+                  <Input
+                    label="Detail Text Color"
+                    name="blogConfig.detail.styles.textColor"
+                    value={formData.blogConfig.detail.styles.textColor}
+                    onChange={handleChange}
+                    placeholder="#111827"
+                  />
+                  <Input
+                    label="Detail Accent Color"
+                    name="blogConfig.detail.styles.accentColor"
+                    value={formData.blogConfig.detail.styles.accentColor}
+                    onChange={handleChange}
+                    placeholder="#4f46e5"
+                  />
+                  <Select
+                    label="Detail Text Align"
+                    name="blogConfig.detail.styles.textAlign"
+                    value={formData.blogConfig.detail.styles.textAlign}
+                    onChange={handleChange}
+                    options={BLOG_TEXT_ALIGN_OPTIONS}
+                  />
+                </div>
+
+                <div className="mt-4">
+                  <Input
+                    label="Detail Background Image URL"
+                    name="blogConfig.detail.styles.backgroundImage"
+                    value={formData.blogConfig.detail.styles.backgroundImage}
+                    onChange={handleChange}
+                    placeholder="https://example.com/blog-detail-bg.jpg"
+                  />
+                </div>
+              </div>
+            </div>
           </div>
 
           {/* Custom Form Fields Builder */}

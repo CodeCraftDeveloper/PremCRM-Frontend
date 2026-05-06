@@ -10,6 +10,8 @@ import {
   CheckCircle,
   AlertCircle,
   ArrowRight,
+  BookOpen,
+  Plus,
 } from "lucide-react";
 import {
   BarChart,
@@ -119,6 +121,37 @@ const AdminDashboard = () => {
           iconBgColor="bg-emerald-100"
           iconColor="text-emerald-600"
         />
+      </div>
+
+      {/* Quick Actions Section */}
+      <div className="rounded-lg sm:rounded-xl border border-gray-200 bg-gradient-to-br from-indigo-50 to-blue-50 p-4 sm:p-6 shadow-sm dark:border-gray-700 dark:from-gray-800 dark:to-gray-800">
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h3 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white">
+              Blog Management
+            </h3>
+            <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 mt-1">
+              Create and manage blog content
+            </p>
+          </div>
+          <BookOpen className="h-8 w-8 sm:h-10 sm:w-10 text-indigo-600 dark:text-indigo-400" />
+        </div>
+        <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
+          <Link
+            to="/admin/blogs/new"
+            className="flex items-center justify-center gap-2 rounded-lg bg-indigo-600 px-4 py-2 text-xs sm:text-sm font-medium text-white hover:bg-indigo-700 transition-colors"
+          >
+            <Plus className="h-4 w-4" />
+            Create New Blog
+          </Link>
+          <Link
+            to="/admin/blogs"
+            className="flex items-center justify-center gap-2 rounded-lg border border-indigo-200 bg-white px-4 py-2 text-xs sm:text-sm font-medium text-indigo-600 hover:bg-indigo-50 transition-colors dark:border-indigo-800 dark:bg-gray-700 dark:text-indigo-400"
+          >
+            View All Blogs
+            <ArrowRight className="h-4 w-4" />
+          </Link>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 gap-4 sm:gap-6 lg:grid-cols-2">

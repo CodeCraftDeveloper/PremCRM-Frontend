@@ -52,6 +52,8 @@ const WebsiteDetail = () => {
   const [showApiKey, setShowApiKey] = useState(false);
   const [isTesting, setIsTesting] = useState(false);
   const [activeSnippetLang, setActiveSnippetLang] = useState("javascript");
+  const [activeBlogSnippetLang, setActiveBlogSnippetLang] =
+    useState("javascript");
 
   useEffect(() => {
     dispatch(fetchWebsite(id));
@@ -143,6 +145,9 @@ const WebsiteDetail = () => {
     : "crm-lead-msg";
   const publicSchemaEndpoint = `${apiBaseUrl}/api/public/form-schema`;
   const publicSubmitEndpoint = `${apiBaseUrl}/api/public/lead`;
+  const publicBlogsEndpoint = `${apiBaseUrl}/api/public/blogs`;
+  const publicBlogCategoriesEndpoint = `${apiBaseUrl}/api/public/blogs/categories`;
+  const publicBlogDetailEndpoint = `${apiBaseUrl}/api/public/blogs/{slug}`;
 
   const _productsEndpoint = `${apiBaseUrl}/api/public/products`;
   const _formSchemaEndpoint = publicSchemaEndpoint;
@@ -1065,6 +1070,356 @@ function ${wordpressRenderFunction}() {
   };
 
   const activeSnippet = integrationSnippets[activeSnippetLang];
+  const blogIntegrationSnippets = {
+    javascript: {
+      label: "JavaScript",
+      code: `const API_KEY = 'YOUR_API_KEY';
+const BLOGS_URL = '${publicBlogsEndpoint}';
+const CATEGORIES_URL = '${publicBlogCategoriesEndpoint}';
+
+const VOID_TAGS = new Set(['area', 'base', 'br', 'col', 'embed', 'hr', 'img', 'input', 'link', 'meta', 'param', 'source', 'track', 'wbr']);
+
+function getSafeTag(tag, fallback = 'div', { allowVoid = true } = {}) {
+  const normalized = /^[a-z][a-z0-9-]*$/i.test(tag || '') ? tag.toLowerCase() : fallback;
+  return !allowVoid && VOID_TAGS.has(normalized) ? fallback : normalized;
+}
+
+function getSurfaceStyle(styles = {}) {
+  return {
+    backgroundColor: styles.backgroundColor || '#ffffff',
+    color: styles.textColor || '#111827',
+    textAlign: styles.textAlign || 'left',
+    backgroundImage: styles.backgroundImage
+      ? 'linear-gradient(rgba(255,255,255,0.92), rgba(255,255,255,0.92)), url(' + styles.backgroundImage + ')'
+      : '',
+    backgroundSize: styles.backgroundImage ? 'cover' : '',
+    backgroundPosition: styles.backgroundImage ? 'center' : '',
+    border: '1px solid ' + (styles.accentColor || '#4f46e5'),
+    borderRadius: '16px',
+    padding: '20px',
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '12px'
+  };
+}
+
+function applyStyles(node, styles) {
+  Object.entries(styles).forEach(([key, value]) => {
+    if (value !== undefined && value !== null && value !== '') {
+      node.style[key] = value;
+    }
+  });
+}
+
+function appendTextNode(parent, tag, text, className) {
+  if (!text) return;
+  const el = document.createElement(getSafeTag(tag, 'div'));
+  if (className) el.className = className;
+  el.textContent = text;
+  parent.appendChild(el);
+}
+
+function renderBlogCard(blog, config) {
+  const listing = config?.listing || {};
+  const visible = listing.visibleFields || {};
+  const elements = listing.elements || {};
+  const styles = listing.styles || {};
+
+  const card = document.createElement(getSafeTag(elements.containerTag, 'article', { allowVoid: false }));
+  applyStyles(card, getSurfaceStyle(styles));
+
+  if (visible.featuredImage && blog.featuredImage) {
+    const imageTag = getSafeTag(elements.imageTag, 'img');
+    const image = document.createElement(imageTag);
+    if (imageTag === 'img') {
+      image.src = blog.featuredImage;
+      image.alt = blog.title || 'Blog image';
+    } else {
+      image.textContent = 'Featured image';
+    }
+    image.style.width = '100%';
+    image.style.minHeight = '160px';
+    image.style.objectFit = 'cover';
+    image.style.borderRadius = '12px';
+    card.appendChild(image);
+  }
+
+  if (visible.category) {
+    const category = document.createElement(getSafeTag(elements.categoryTag, 'span', { allowVoid: false }));
+    category.textContent = blog.category || 'General';
+    applyStyles(category, {
+      alignSelf: 'flex-start',
+      backgroundColor: styles.accentColor || '#4f46e5',
+      color: '#ffffff',
+      borderRadius: '999px',
+      padding: '6px 12px',
+      fontSize: '12px',
+      fontWeight: '700'
+    });
+    card.appendChild(category);
+  }
+
+  if (visible.title) {
+    appendTextNode(card, getSafeTag(elements.titleTag, 'h3', { allowVoid: false }), blog.title, 'blog-card-title');
+  }
+
+  if (visible.description) {
+    appendTextNode(card, getSafeTag(elements.descriptionTag, 'p', { allowVoid: false }), blog.description, 'blog-card-description');
+  }
+
+  const metaBits = [];
+  if (visible.author && blog.author?.name) metaBits.push('By ' + blog.author.name);
+  if (visible.publishedAt && blog.publishedAt) {
+    metaBits.push(new Date(blog.publishedAt).toLocaleDateString());
+  }
+  if (visible.readingTime && blog.readingTime) metaBits.push(blog.readingTime + ' min read');
+
+  if (metaBits.length) {
+    appendTextNode(card, getSafeTag(elements.metaTag, 'div', { allowVoid: false }), metaBits.join(' • '), 'blog-card-meta');
+  }
+
+  if (visible.tags && blog.tags?.length) {
+    const tags = document.createElement('div');
+    tags.style.display = 'flex';
+    tags.style.flexWrap = 'wrap';
+    tags.style.gap = '8px';
+    blog.tags.slice(0, 4).forEach((tag) => {
+      const pill = document.createElement('span');
+      pill.textContent = '#' + tag;
+      applyStyles(pill, {
+        padding: '4px 10px',
+        borderRadius: '999px',
+        backgroundColor: 'rgba(15, 23, 42, 0.08)',
+        fontSize: '12px'
+      });
+      tags.appendChild(pill);
+    });
+    card.appendChild(tags);
+  }
+
+  return card;
+}
+
+async function loadBlogs({ page = 1, limit = 6, category = '', search = '' } = {}) {
+  const params = new URLSearchParams({ page, limit });
+  if (category) params.set('category', category);
+  if (search) params.set('search', search);
+
+  const response = await fetch(\`\${BLOGS_URL}?\${params.toString()}\`, {
+    headers: { 'x-api-key': API_KEY }
+  });
+
+  if (!response.ok) {
+    throw new Error('Failed to fetch blogs');
+  }
+
+  const payload = await response.json();
+  const root = document.getElementById('orbinest-blog-list');
+
+  if (root) {
+    root.innerHTML = '';
+    (payload.data?.blogs || []).forEach((blog) => {
+      root.appendChild(renderBlogCard(blog, payload.data?.config));
+    });
+  }
+
+  return payload;
+}
+
+async function loadBlogCategories() {
+  const response = await fetch(CATEGORIES_URL, {
+    headers: { 'x-api-key': API_KEY }
+  });
+
+  if (!response.ok) {
+    throw new Error('Failed to fetch blog categories');
+  }
+
+  return response.json();
+}
+
+async function loadBlogDetail(slug) {
+  const response = await fetch(\`\${BLOGS_URL}/\${slug}\`, {
+    headers: { 'x-api-key': API_KEY }
+  });
+
+  if (!response.ok) {
+    throw new Error('Failed to fetch blog detail');
+  }
+
+  return response.json();
+}
+
+// Example usage
+loadBlogs({ limit: 3 })
+  .then(({ data }) => {
+    console.log('blogs', data.blogs);
+    console.log('config', data.config);
+    console.log('pagination', data.pagination);
+  });
+
+loadBlogCategories()
+  .then(({ data }) => console.log('categories', data.categories));
+
+loadBlogDetail('my-blog-slug')
+  .then(({ data }) => console.log('blog', data.blog));
+
+// HTML target
+// <div id="orbinest-blog-list"></div>`,
+    },
+    react: {
+      label: "React / Next.js",
+      code: `import { useEffect, useState } from 'react';
+
+const API_KEY = 'YOUR_API_KEY';
+const BLOGS_URL = '${publicBlogsEndpoint}';
+
+export default function HostedBlogs() {
+  const [blogs, setBlogs] = useState([]);
+  const [categories, setCategories] = useState([]);
+  const [config, setConfig] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  const VOID_TAGS = new Set(['area', 'base', 'br', 'col', 'embed', 'hr', 'img', 'input', 'link', 'meta', 'param', 'source', 'track', 'wbr']);
+  const getSafeTag = (tag, fallback = 'div', { allowVoid = true } = {}) => {
+    const normalized =
+      /^[a-z][a-z0-9-]*$/i.test(tag || '') ? tag.toLowerCase() : fallback;
+    return !allowVoid && VOID_TAGS.has(normalized) ? fallback : normalized;
+  };
+
+  const getSurfaceStyle = (styles = {}) => ({
+    backgroundColor: styles.backgroundColor || '#ffffff',
+    color: styles.textColor || '#111827',
+    textAlign: styles.textAlign || 'left',
+    backgroundImage: styles.backgroundImage
+      ? \`linear-gradient(rgba(255,255,255,0.92), rgba(255,255,255,0.92)), url(\${styles.backgroundImage})\`
+      : undefined,
+    backgroundSize: styles.backgroundImage ? 'cover' : undefined,
+    backgroundPosition: styles.backgroundImage ? 'center' : undefined,
+    border: \`1px solid \${styles.accentColor || '#4f46e5'}\`,
+    borderRadius: 16,
+    padding: 20,
+    display: 'flex',
+    flexDirection: 'column',
+    gap: 12,
+  });
+
+  useEffect(() => {
+    async function loadData() {
+      try {
+        const [blogsRes, categoriesRes] = await Promise.all([
+          fetch(\`\${BLOGS_URL}?page=1&limit=6\`, {
+            headers: { 'x-api-key': API_KEY }
+          }),
+          fetch(\`\${BLOGS_URL}/categories\`, {
+            headers: { 'x-api-key': API_KEY }
+          }),
+        ]);
+
+        const blogsJson = await blogsRes.json();
+        const categoriesJson = await categoriesRes.json();
+
+        setBlogs(blogsJson.data?.blogs || []);
+        setCategories(categoriesJson.data?.categories || []);
+        setConfig(blogsJson.data?.config || null);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    loadData();
+  }, []);
+
+  if (loading) return <p>Loading blogs...</p>;
+
+  const listing = config?.listing || {};
+  const visible = listing.visibleFields || {};
+  const elements = listing.elements || {};
+  const styles = listing.styles || {};
+  const CardTag = getSafeTag(elements.containerTag, 'article', { allowVoid: false });
+  const TitleTag = getSafeTag(elements.titleTag, 'h3', { allowVoid: false });
+  const DescriptionTag = getSafeTag(elements.descriptionTag, 'p', { allowVoid: false });
+  const CategoryTag = getSafeTag(elements.categoryTag, 'span', { allowVoid: false });
+  const MetaTag = getSafeTag(elements.metaTag, 'div', { allowVoid: false });
+  const ImageTag = getSafeTag(elements.imageTag, 'img');
+
+  return (
+    <section>
+      <h2>Latest Blogs</h2>
+      <p>Categories: {categories.join(', ')}</p>
+      <div style={{ display: 'grid', gap: 16 }}>
+        {blogs.map((blog) => (
+          <CardTag
+            key={blog._id}
+            style={getSurfaceStyle(styles)}
+          >
+            {visible.featuredImage && blog.featuredImage && (
+              ImageTag === 'img' ? (
+                <img
+                  src={blog.featuredImage}
+                  alt={blog.title || 'Blog image'}
+                  style={{ width: '100%', borderRadius: 12, minHeight: 160, objectFit: 'cover' }}
+                />
+              ) : (
+                <ImageTag>Featured image</ImageTag>
+              )
+            )}
+
+            {visible.category && (
+              <CategoryTag
+                style={{
+                  alignSelf: 'flex-start',
+                  backgroundColor: styles.accentColor || '#4f46e5',
+                  color: '#ffffff',
+                  borderRadius: 999,
+                  padding: '6px 12px',
+                  fontSize: 12,
+                  fontWeight: 700,
+                }}
+              >
+                {blog.category || 'General'}
+              </CategoryTag>
+            )}
+
+            {visible.title && blog.title && <TitleTag>{blog.title}</TitleTag>}
+            {visible.description && blog.description && (
+              <DescriptionTag>{blog.description}</DescriptionTag>
+            )}
+
+            {(visible.author || visible.publishedAt || visible.readingTime) && (
+              <MetaTag style={{ display: 'flex', gap: 10, flexWrap: 'wrap', opacity: 0.8, fontSize: 13 }}>
+                {visible.author && blog.author?.name && <span>By {blog.author.name}</span>}
+                {visible.publishedAt && blog.publishedAt && (
+                  <span>{new Date(blog.publishedAt).toLocaleDateString()}</span>
+                )}
+                {visible.readingTime && blog.readingTime && (
+                  <span>{blog.readingTime} min read</span>
+                )}
+              </MetaTag>
+            )}
+          </CardTag>
+        ))}
+      </div>
+    </section>
+  );
+}`,
+    },
+    curl: {
+      label: "cURL",
+      code: `# List published blogs
+curl -X GET '${publicBlogsEndpoint}?page=1&limit=6' \\
+  -H 'x-api-key: YOUR_API_KEY'
+
+# List categories
+curl -X GET '${publicBlogCategoriesEndpoint}' \\
+  -H 'x-api-key: YOUR_API_KEY'
+
+# Get one blog by slug
+curl -X GET '${publicBlogsEndpoint}/my-blog-slug' \\
+  -H 'x-api-key: YOUR_API_KEY'`,
+    },
+  };
+  const activeBlogSnippet = blogIntegrationSnippets[activeBlogSnippetLang];
 
   return (
     <div className="space-y-6">
@@ -1424,6 +1779,82 @@ function ${wordpressRenderFunction}() {
         </pre>
       </div>
 
+      <div className="rounded-xl border border-gray-200 bg-white p-6 dark:border-gray-700 dark:bg-gray-800">
+        <div className="flex items-center justify-between">
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
+            Blog Fetch Integration
+          </h2>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() =>
+              handleCopyToClipboard(
+                activeBlogSnippet.code,
+                `${activeBlogSnippet.label} blog snippet`,
+              )
+            }
+          >
+            <Copy className="mr-2 h-4 w-4" />
+            Copy Code
+          </Button>
+        </div>
+
+        <p className="mt-3 text-sm text-gray-600 dark:text-gray-300">
+          Orbinest can host and manage published blogs for this website. External
+          websites can fetch only this website&apos;s published blogs by sending
+          the same website API key in the <span className="font-mono">x-api-key</span>{" "}
+          header. The response also includes this website&apos;s configured blog
+          display fields, element tags, and style tokens.
+        </p>
+
+        <div className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-3">
+          <EndpointCard
+            label="List Blogs"
+            value={publicBlogsEndpoint}
+            onCopy={handleCopyToClipboard}
+          />
+          <EndpointCard
+            label="Categories"
+            value={publicBlogCategoriesEndpoint}
+            onCopy={handleCopyToClipboard}
+          />
+          <EndpointCard
+            label="Blog Detail"
+            value={publicBlogDetailEndpoint}
+            onCopy={handleCopyToClipboard}
+          />
+        </div>
+
+        <p className="mt-4 text-xs text-gray-500 dark:text-gray-400">
+          Query params for list endpoint: <span className="font-mono">page</span>,{" "}
+          <span className="font-mono">limit</span>,{" "}
+          <span className="font-mono">category</span>,{" "}
+          <span className="font-mono">search</span>,{" "}
+          <span className="font-mono">sortBy</span>, and{" "}
+          <span className="font-mono">sortOrder</span>.
+        </p>
+
+        <div className="mt-4 flex flex-wrap gap-1.5 border-b border-gray-200 pb-3 dark:border-gray-700">
+          {Object.entries(blogIntegrationSnippets).map(([key, { label }]) => (
+            <button
+              key={key}
+              onClick={() => setActiveBlogSnippetLang(key)}
+              className={`rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
+                activeBlogSnippetLang === key
+                  ? "bg-indigo-600 text-white shadow-sm"
+                  : "bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600"
+              }`}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+
+        <pre className="mt-3 max-h-[420px] overflow-auto rounded-lg bg-gray-900 p-4 text-xs text-green-400">
+          <code>{activeBlogSnippet.code}</code>
+        </pre>
+      </div>
+
       {/* Regenerate API Key Modal */}
       <Modal
         isOpen={regenerateModalOpen}
@@ -1489,6 +1920,24 @@ const SettingRow = ({ label, enabled }) => (
     ) : (
       <XCircle className="h-4 w-4 text-gray-400" />
     )}
+  </div>
+);
+
+const EndpointCard = ({ label, value, onCopy }) => (
+  <div className="rounded-lg border border-gray-200 bg-gray-50 p-3 dark:border-gray-700 dark:bg-gray-900/40">
+    <p className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+      {label}
+    </p>
+    <code className="mt-2 block break-all text-xs text-gray-800 dark:text-gray-200">
+      {value}
+    </code>
+    <button
+      type="button"
+      className="mt-3 text-xs font-medium text-indigo-600 hover:text-indigo-500 dark:text-indigo-300"
+      onClick={() => onCopy(value, label)}
+    >
+      Copy Endpoint
+    </button>
   </div>
 );
 

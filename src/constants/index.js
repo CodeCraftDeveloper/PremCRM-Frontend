@@ -98,6 +98,7 @@ export const ADMIN_NAV_ITEMS = [
   { path: "/admin", label: "Dashboard", icon: "dashboard" },
   { path: "/admin/tickets", label: "Leads", icon: "ticket" },
   { path: "/admin/users", label: "Contacts", icon: "users" },
+  { path: "/admin/blogs", label: "Blogs", icon: "blog" },
   { path: "/admin/reports", label: "Analytics", icon: "report" },
   { path: "/admin/settings", label: "Settings", icon: "settings" },
 ];

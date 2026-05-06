@@ -156,6 +156,23 @@ const TicketForm = lazy(() =>
   import("./pages/tickets").then((m) => ({ default: m.TicketForm })),
 );
 
+// Blogs pages
+const BlogsList = lazy(() =>
+  import("./pages/blogs").then((m) => ({ default: m.BlogsList })),
+);
+const BlogForm = lazy(() =>
+  import("./pages/blogs").then((m) => ({ default: m.BlogForm })),
+);
+const BlogDetailPage = lazy(() =>
+  import("./pages/blogs").then((m) => ({ default: m.BlogDetailPage })),
+);
+const PublicBlogsPage = lazy(() =>
+  import("./pages/blogs").then((m) => ({ default: m.PublicBlogsPage })),
+);
+const PublicBlogDetailPage = lazy(() =>
+  import("./pages/blogs").then((m) => ({ default: m.PublicBlogDetailPage })),
+);
+
 // Marketing pages
 const MarketingDashboard = lazy(
   () => import("./pages/marketing/MarketingDashboard"),
@@ -654,6 +671,40 @@ function App() {
             }
           />
 
+          {/* Blogs Management */}
+          <Route
+            path="blogs"
+            element={
+              <Lazy>
+                <BlogsList />
+              </Lazy>
+            }
+          />
+          <Route
+            path="blogs/new"
+            element={
+              <Lazy>
+                <BlogForm />
+              </Lazy>
+            }
+          />
+          <Route
+            path="blogs/:id"
+            element={
+              <Lazy>
+                <BlogDetailPage />
+              </Lazy>
+            }
+          />
+          <Route
+            path="blogs/:id/edit"
+            element={
+              <Lazy>
+                <BlogForm isEdit />
+              </Lazy>
+            }
+          />
+
           {/* Query Management — Centralised queries from all sources */}
           <Route
             path="queries"
@@ -996,6 +1047,24 @@ function App() {
           element={
             <Lazy>
               <RegistrationConfirmationPage />
+            </Lazy>
+          }
+        />
+
+        {/* Public Blogs */}
+        <Route
+          path="/blogs/:websiteId"
+          element={
+            <Lazy>
+              <PublicBlogsPage />
+            </Lazy>
+          }
+        />
+        <Route
+          path="/blogs/:websiteId/:slug"
+          element={
+            <Lazy>
+              <PublicBlogDetailPage />
             </Lazy>
           }
         />
