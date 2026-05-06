@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { Link, useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
@@ -12,6 +12,7 @@ import {
   EyeOff,
   KeyRound,
   UserPlus,
+  X,
 } from "lucide-react";
 import { login } from "../../store/slices/authSlice";
 import toast from "react-hot-toast";
@@ -26,7 +27,9 @@ export const LoginPage = () => {
   const navigate = useNavigate();
   const { isLoading } = useSelector((state) => state.auth);
   const [showPassword, setShowPassword] = useState(false);
+  const [isAccessWindowOpen, setIsAccessWindowOpen] = useState(false);
   const [accessLink, setAccessLink] = useState("");
+  const accessLinkInputRef = useRef(null);
 
   const {
     register,
@@ -90,6 +93,24 @@ export const LoginPage = () => {
       toast.error("Paste the full link from the email so it can be opened");
     }
   };
+
+  useEffect(() => {
+    if (!isAccessWindowOpen) return undefined;
+
+    accessLinkInputRef.current?.focus();
+
+    const handleEscape = (event) => {
+      if (event.key === "Escape") {
+        setIsAccessWindowOpen(false);
+      }
+    };
+
+    window.addEventListener("keydown", handleEscape);
+
+    return () => {
+      window.removeEventListener("keydown", handleEscape);
+    };
+  }, [isAccessWindowOpen]);
 
   return (
     <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-linear-to-br from-slate-950 via-slate-900 to-indigo-950 p-4">
@@ -214,90 +235,148 @@ export const LoginPage = () => {
             </button>
           </form>
 
-          <div className="mt-4 border-t border-slate-700 pt-4 text-center">
-            <Link
-              to="/register"
-              className="text-sm font-medium text-violet-300 hover:text-violet-200"
-            >
-              Create Orbinest Workspace
-            </Link>
-            <p className="mt-1 text-xs text-slate-400">
-              Set up tenant + admin + company link
-            </p>
-          </div>
+          <div className="mt-4 border-t border-slate-700 pt-4">
+            <div className="grid grid-cols-2 overflow-hidden rounded-xl border border-slate-700 bg-slate-950/50 divide-x divide-slate-700">
+              <Link
+                to="/register"
+                className="block min-w-0 bg-indigo-700 px-3 py-4 text-center transition hover:bg-indigo-600 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-indigo-300/70"
+              >
+                <span className="block text-sm font-medium leading-snug text-white">
+                  Create Workspace
+                </span>
+                <span className="mt-1 block text-xs leading-snug text-indigo-100">
+                  Tenant + admin setup
+                </span>
+              </Link>
 
-          <div className="mt-4 border-t border-slate-700 pt-4 text-center">
-            <Link
-              to="/register-marketing-manager"
-              className="text-sm font-medium text-cyan-300 hover:text-cyan-200"
-            >
-              Register Marketing Manager
-            </Link>
-            <p className="mt-1 text-xs text-slate-400">
-              No admin login required
-            </p>
+              <Link
+                to="/register-marketing-manager"
+                className="block min-w-0 bg-teal-700 px-3 py-4 text-center transition hover:bg-teal-600 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-teal-200/70"
+              >
+                <span className="block text-sm font-medium leading-snug text-white">
+                  Marketing Manager
+                </span>
+                <span className="mt-1 block text-xs leading-snug text-teal-100">
+                  Join without admin
+                </span>
+              </Link>
+            </div>
           </div>
 
           <div className="mt-4 border-t border-slate-700 pt-4">
-            <div className="rounded-xl border border-slate-700 bg-slate-950/60 p-4">
-              <div className="mb-3 flex items-start gap-3">
-                <div className="rounded-lg bg-slate-800 p-2">
-                  <KeyRound className="h-4 w-4 text-cyan-300" />
-                </div>
-                <div>
-                  <h2 className="text-sm font-semibold text-white">
-                    Recovery &amp; Invite Access
-                  </h2>
-                  <p className="mt-1 text-xs text-slate-400">
-                    Request a reset link, or open the invite/reset link you
-                    received by email.
-                  </p>
-                </div>
-              </div>
+            <button
+              type="button"
+              onClick={() => setIsAccessWindowOpen(true)}
+              aria-expanded={isAccessWindowOpen}
+              aria-controls="recovery-invite-window"
+              className="flex w-full items-center gap-3 rounded-xl border border-slate-700 bg-slate-950/60 p-4 text-left transition hover:border-cyan-500/50 hover:bg-slate-950 focus:outline-none focus:ring-2 focus:ring-cyan-500/40"
+            >
+              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-slate-800">
+                <KeyRound className="h-4 w-4 text-cyan-300" />
+              </span>
+              <span className="min-w-0 flex-1">
+                <span className="block text-sm font-semibold text-white">
+                  Recovery &amp; Invite Access
+                </span>
+                <span className="mt-1 block text-xs text-slate-400">
+                  Open password reset and invite tools
+                </span>
+              </span>
+            </button>
+          </div>
+        </div>
+      </div>
 
-              <div className="flex flex-wrap gap-2">
-                <Link
-                  to="/forgot-password"
-                  className="flex min-w-45 flex-1 items-center justify-center gap-2 rounded-lg border border-cyan-500/40 bg-cyan-500/10 px-3 py-2 text-sm font-medium text-cyan-200 transition hover:bg-cyan-500/20"
+      {isAccessWindowOpen ? (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/75 p-4 backdrop-blur-sm"
+          onMouseDown={(event) => {
+            if (event.target === event.currentTarget) {
+              setIsAccessWindowOpen(false);
+            }
+          }}
+        >
+          <div
+            id="recovery-invite-window"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="recovery-invite-title"
+            className="w-full max-w-md rounded-2xl border border-slate-700 bg-slate-950 p-4 shadow-2xl shadow-black/40"
+          >
+            <div className="mb-3 flex items-start gap-3">
+              <div className="rounded-lg bg-slate-800 p-2">
+                <KeyRound className="h-4 w-4 text-cyan-300" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <h2
+                  id="recovery-invite-title"
+                  className="text-sm font-semibold text-white"
                 >
-                  <Mail className="h-4 w-4" />
-                  Forgot Password
-                </Link>
+                  Recovery &amp; Invite Access
+                </h2>
+                <p className="mt-1 text-xs text-slate-400">
+                  Request a reset link, or open the invite/reset link you
+                  received by email.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsAccessWindowOpen(false)}
+                aria-label="Close recovery and invite access"
+                className="rounded-lg p-2 text-slate-400 transition hover:bg-slate-800 hover:text-white focus:outline-none focus:ring-2 focus:ring-cyan-500/40"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+
+            <div className="flex flex-wrap gap-2">
+              <Link
+                to="/forgot-password"
+                className="flex min-w-45 flex-1 items-center justify-center gap-2 rounded-lg border border-cyan-500/40 bg-cyan-500/10 px-3 py-2 text-sm font-medium text-cyan-200 transition hover:bg-cyan-500/20"
+              >
+                <Mail className="h-4 w-4" />
+                Forgot Password
+              </Link>
+              <button
+                type="button"
+                onClick={() => navigate("/forgot-password")}
+                className="flex min-w-45 flex-1 items-center justify-center gap-2 rounded-lg border border-violet-500/40 bg-violet-500/10 px-3 py-2 text-sm font-medium text-violet-200 transition hover:bg-violet-500/20"
+              >
+                <UserPlus className="h-4 w-4" />
+                Need a New Link?
+              </button>
+            </div>
+
+            <div className="mt-3 space-y-2">
+              <label className="block text-xs font-medium uppercase tracking-wide text-slate-400">
+                Paste invite or reset link
+              </label>
+              <div className="flex flex-col gap-2 sm:flex-row">
+                <input
+                  ref={accessLinkInputRef}
+                  type="text"
+                  value={accessLink}
+                  onChange={(event) => setAccessLink(event.target.value)}
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter") {
+                      handleOpenAccessLink();
+                    }
+                  }}
+                  placeholder="https://.../accept-invite/token or /reset-password/token"
+                  className="h-11 flex-1 rounded-lg border border-slate-700 bg-slate-900 px-3 text-sm text-white placeholder:text-slate-500 focus:border-cyan-400 focus:outline-none focus:ring-2 focus:ring-cyan-500/20"
+                />
                 <button
                   type="button"
-                  onClick={() => navigate("/forgot-password")}
-                  className="flex min-w-45 flex-1 items-center justify-center gap-2 rounded-lg border border-violet-500/40 bg-violet-500/10 px-3 py-2 text-sm font-medium text-violet-200 transition hover:bg-violet-500/20"
+                  onClick={handleOpenAccessLink}
+                  className="rounded-lg bg-cyan-500 px-4 py-2 text-sm font-semibold text-slate-950 transition hover:bg-cyan-400"
                 >
-                  <UserPlus className="h-4 w-4" />
-                  Need a New Link?
+                  Open Link
                 </button>
-              </div>
-
-              <div className="mt-3 space-y-2">
-                <label className="block text-xs font-medium uppercase tracking-wide text-slate-400">
-                  Paste invite or reset link
-                </label>
-                <div className="flex flex-col gap-2 sm:flex-row">
-                  <input
-                    type="text"
-                    value={accessLink}
-                    onChange={(event) => setAccessLink(event.target.value)}
-                    placeholder="https://.../accept-invite/token or /reset-password/token"
-                    className="h-11 flex-1 rounded-lg border border-slate-700 bg-slate-900 px-3 text-sm text-white placeholder:text-slate-500 focus:border-cyan-400 focus:outline-none focus:ring-2 focus:ring-cyan-500/20"
-                  />
-                  <button
-                    type="button"
-                    onClick={handleOpenAccessLink}
-                    className="rounded-lg bg-cyan-500 px-4 py-2 text-sm font-semibold text-slate-950 transition hover:bg-cyan-400"
-                  >
-                    Open Link
-                  </button>
-                </div>
               </div>
             </div>
           </div>
         </div>
-      </div>
+      ) : null}
     </div>
   );
 };

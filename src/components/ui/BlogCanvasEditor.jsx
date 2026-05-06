@@ -93,6 +93,8 @@ const BlogCanvasEditor = ({
 
   useEffect(() => {
     const nextSource = getBlogEditingSource(value);
+    // Functional-update bail-out prevents cascading renders; this pattern is safe here.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setMarkdown((currentValue) =>
       currentValue === nextSource ? currentValue : nextSource,
     );
