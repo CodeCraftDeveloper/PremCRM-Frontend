@@ -222,6 +222,9 @@ const WorkflowListPage = lazy(
 const WorkflowBuilderPage = lazy(
   () => import("./pages/crm/WorkflowBuilderPage"),
 );
+const InboxPage = lazy(() =>
+  import("./pages/inbox").then((m) => ({ default: m.InboxPage })),
+);
 
 // Reusable Suspense wrapper for lazy-loaded pages — declared outside render
 // to avoid recreating on every render cycle (react-hooks/static-components).
@@ -729,6 +732,16 @@ function App() {
             }
           />
 
+          {/* Unified Inbox */}
+          <Route
+            path="inbox"
+            element={
+              <Lazy>
+                <InboxPage />
+              </Lazy>
+            }
+          />
+
           {/* CRM Product Layer */}
           <Route
             path="crm/dashboard"
@@ -1006,6 +1019,16 @@ function App() {
             element={
               <Lazy>
                 <QueryManagement isAdmin={false} />
+              </Lazy>
+            }
+          />
+
+          {/* Unified Inbox */}
+          <Route
+            path="inbox"
+            element={
+              <Lazy>
+                <InboxPage />
               </Lazy>
             }
           />

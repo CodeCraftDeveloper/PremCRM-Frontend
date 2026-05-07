@@ -12,6 +12,7 @@ import crmReducer from "./slices/crm/crmSlice";
 import metadataReducer from "./slices/crm/metadataSlice";
 import ticketsReducer from "./slices/ticketsSlice";
 import workflowV2Reducer from "./slices/workflowV2Slice";
+import inboxReducer from "./slices/inboxSlice";
 
 export const store = configureStore({
   reducer: {
@@ -28,6 +29,7 @@ export const store = configureStore({
     metadata: metadataReducer,
     tickets: ticketsReducer,
     workflowV2: workflowV2Reducer,
+    inbox: inboxReducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({

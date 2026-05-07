@@ -21,6 +21,7 @@ import {
   ClipboardList,
   Layers,
   Ticket,
+  MessageSquare,
 } from "lucide-react";
 import {
   toggleSidebar,
@@ -175,6 +176,7 @@ const Sidebar = ({ role = "admin" }) => {
           { path: "/admin/clients", icon: Briefcase, label: "Clients" },
           { path: "/admin/leads", icon: Target, label: "Leads" },
           { path: "/admin/tickets", icon: Ticket, label: "Tickets" },
+          { path: "/admin/inbox", icon: MessageSquare, label: "Inbox" },
           { path: "/admin/queries", icon: FileSpreadsheet, label: "Queries" },
           { path: "/admin/websites", icon: Globe, label: "Websites" },
           {
@@ -189,6 +191,7 @@ const Sidebar = ({ role = "admin" }) => {
           { path: "/marketing/clients", icon: Briefcase, label: "My Clients" },
           { path: "/marketing/leads", icon: Target, label: "My Leads" },
           { path: "/marketing/tickets", icon: Ticket, label: "Tickets" },
+          { path: "/marketing/inbox", icon: MessageSquare, label: "Inbox" },
           {
             path: "/marketing/queries",
             icon: FileSpreadsheet,
