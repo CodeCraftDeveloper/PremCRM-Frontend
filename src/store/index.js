@@ -11,6 +11,7 @@ import superAdminReducer from "./slices/superAdminSlice";
 import crmReducer from "./slices/crm/crmSlice";
 import metadataReducer from "./slices/crm/metadataSlice";
 import ticketsReducer from "./slices/ticketsSlice";
+import workflowV2Reducer from "./slices/workflowV2Slice";
 
 export const store = configureStore({
   reducer: {
@@ -26,6 +27,7 @@ export const store = configureStore({
     crm: crmReducer,
     metadata: metadataReducer,
     tickets: ticketsReducer,
+    workflowV2: workflowV2Reducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({

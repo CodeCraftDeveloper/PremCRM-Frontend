@@ -216,6 +216,12 @@ const BlueprintEditorPage = lazy(
 const PipelineManagerPage = lazy(
   () => import("./pages/crm/PipelineManagerPage"),
 );
+const WorkflowListPage = lazy(
+  () => import("./pages/crm/WorkflowListPage"),
+);
+const WorkflowBuilderPage = lazy(
+  () => import("./pages/crm/WorkflowBuilderPage"),
+);
 
 // Reusable Suspense wrapper for lazy-loaded pages — declared outside render
 // to avoid recreating on every render cycle (react-hooks/static-components).
@@ -769,6 +775,30 @@ function App() {
             element={
               <Lazy>
                 <AutomationBuilderPage />
+              </Lazy>
+            }
+          />
+          <Route
+            path="crm/workflows"
+            element={
+              <Lazy>
+                <WorkflowListPage />
+              </Lazy>
+            }
+          />
+          <Route
+            path="crm/workflows/new"
+            element={
+              <Lazy>
+                <WorkflowBuilderPage />
+              </Lazy>
+            }
+          />
+          <Route
+            path="crm/workflows/:id"
+            element={
+              <Lazy>
+                <WorkflowBuilderPage />
               </Lazy>
             }
           />

@@ -8,3 +8,5 @@ export { default as MarketingCrmDashboard } from "./MarketingCrmDashboard";
 export { default as CustomFieldsManager } from "./CustomFieldsManager";
 export { default as LayoutBuilderPage } from "./LayoutBuilderPage";
 export { default as FormBuilderPage } from "./FormBuilderPage";
+export { default as WorkflowListPage } from "./WorkflowListPage";
+export { default as WorkflowBuilderPage } from "./WorkflowBuilderPage";

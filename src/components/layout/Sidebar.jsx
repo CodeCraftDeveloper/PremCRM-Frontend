@@ -150,6 +150,12 @@ const Sidebar = ({ role = "admin" }) => {
             permission: "crm.automation.manage",
           },
           {
+            path: `${prefix}/crm/workflows`,
+            icon: GitBranch,
+            label: "Workflows v2",
+            permission: "crm.automation.manage",
+          },
+          {
             path: `${prefix}/crm/blueprints`,
             icon: GitBranch,
             label: "Blueprints",
