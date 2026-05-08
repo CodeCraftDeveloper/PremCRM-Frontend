@@ -6,6 +6,7 @@ import {
   AlertCircle,
   ArrowLeft,
   CheckCheck,
+  CheckCircle2,
   Clock,
   Facebook,
   FileText,
@@ -15,11 +16,19 @@ import {
   MoreVertical,
   RotateCw,
   Send,
+  ShieldCheck,
   User,
+  XCircle,
 } from "lucide-react";
+import {
+  approveGmailDraft,
+  listGmailApprovals,
+  rejectGmailDraft,
+} from "../../services/inboxApi";
 import {
   clearActiveConversation,
   closeConversation,
+  createGmailDraft,
   fetchMessages,
   markRead,
   reopenConversation,
@@ -112,12 +121,17 @@ export default function MessageThread() {
     messages,
     messagesLoading,
     messageSending,
+    gmailDraftCreating,
   } = useSelector((state) => state.inbox);
 
   const [body, setBody] = useState("");
   const [showActions, setShowActions] = useState(false);
+  const [gmailApprovals, setGmailApprovals] = useState([]);
+  const [approvalsLoading, setApprovalsLoading] = useState(false);
+  const [approvalActionId, setApprovalActionId] = useState(null);
   const scrollRef = useRef(null);
   const inputRef = useRef(null);
+  const isGmailConversation = activeConversation?.channel === "gmail";
 
   useEffect(() => {
     if (!activeConversation?._id) return;
@@ -127,6 +141,37 @@ export default function MessageThread() {
       dispatch(markRead(activeConversation._id));
     }
   }, [dispatch, activeConversation?._id, activeConversation?.unreadCount]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadGmailApprovals() {
+      if (!activeConversation?._id || !isGmailConversation) {
+        setGmailApprovals([]);
+        return;
+      }
+
+      setApprovalsLoading(true);
+      try {
+        const response = await listGmailApprovals({
+          status: "pending",
+          conversationId: activeConversation._id,
+          limit: 100,
+        });
+        if (!cancelled) setGmailApprovals(response?.data || []);
+      } catch {
+        if (!cancelled) setGmailApprovals([]);
+      } finally {
+        if (!cancelled) setApprovalsLoading(false);
+      }
+    }
+
+    loadGmailApprovals();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [activeConversation?._id, isGmailConversation]);
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -143,12 +188,31 @@ export default function MessageThread() {
     }
 
     try {
-      await dispatch(
-        sendMsg({
-          conversationId: activeConversation._id,
-          payload: { contentType: "text", body: body.trim() },
-        }),
-      ).unwrap();
+      if (isGmailConversation) {
+        const result = await dispatch(
+          createGmailDraft({
+            conversationId: activeConversation._id,
+            payload: {
+              body: body.trim(),
+              autoApprove: false,
+            },
+          }),
+        ).unwrap();
+        if (result?.approvalRequest) {
+          setGmailApprovals((current) => [
+            result.approvalRequest,
+            ...current.filter((item) => item._id !== result.approvalRequest._id),
+          ]);
+        }
+        toast.success("Gmail draft created for approval");
+      } else {
+        await dispatch(
+          sendMsg({
+            conversationId: activeConversation._id,
+            payload: { contentType: "text", body: body.trim() },
+          }),
+        ).unwrap();
+      }
       setBody("");
       inputRef.current?.focus();
     } catch (error) {
@@ -164,6 +228,51 @@ export default function MessageThread() {
       toast.error("Failed to close conversation");
     }
     setShowActions(false);
+  };
+
+  const handleApproveGmail = async (approvalId) => {
+    setApprovalActionId(approvalId);
+    try {
+      await approveGmailDraft(approvalId);
+      setGmailApprovals((current) =>
+        current.filter((approval) => approval._id !== approvalId),
+      );
+      toast.success("Gmail draft approved and queued");
+      if (activeConversation?._id) {
+        dispatch(fetchMessages({ conversationId: activeConversation._id }));
+      }
+    } catch (error) {
+      toast.error(
+        error.response?.data?.message || "Failed to approve Gmail draft",
+      );
+    } finally {
+      setApprovalActionId(null);
+    }
+  };
+
+  const handleRejectGmail = async (approvalId) => {
+    const decisionReason = window.prompt("Reason for rejecting this draft");
+    if (!decisionReason?.trim()) return;
+
+    setApprovalActionId(approvalId);
+    try {
+      await rejectGmailDraft(approvalId, {
+        decisionReason: decisionReason.trim(),
+      });
+      setGmailApprovals((current) =>
+        current.filter((approval) => approval._id !== approvalId),
+      );
+      toast.success("Gmail draft rejected");
+      if (activeConversation?._id) {
+        dispatch(fetchMessages({ conversationId: activeConversation._id }));
+      }
+    } catch (error) {
+      toast.error(
+        error.response?.data?.message || "Failed to reject Gmail draft",
+      );
+    } finally {
+      setApprovalActionId(null);
+    }
   };
 
   const handleReopen = async () => {
@@ -196,6 +305,7 @@ export default function MessageThread() {
   const participant = getParticipantLabel(activeConversation);
   const assignee = getAssigneeLabel(activeConversation);
   const composeDisabled = activeConversation.status === "closed";
+  const sending = messageSending || gmailDraftCreating;
 
   return (
     <div className="flex min-w-0 flex-1 flex-col bg-white dark:bg-gray-900">
@@ -380,6 +490,60 @@ export default function MessageThread() {
         onSubmit={handleSend}
         className="border-t border-gray-200 px-4 py-3 dark:border-gray-700"
       >
+        {isGmailConversation && (
+          <div className="mb-3 border-b border-gray-100 pb-3 dark:border-gray-800">
+            <div className="mb-2 flex items-center justify-between gap-2">
+              <span className="flex items-center gap-1.5 text-[11px] font-semibold uppercase text-gray-500 dark:text-gray-400">
+                <ShieldCheck className="h-3.5 w-3.5 text-amber-500" />
+                Pending approval
+              </span>
+              {approvalsLoading && (
+                <span className="text-[10px] text-gray-400">Checking</span>
+              )}
+            </div>
+            {gmailApprovals.length > 0 ? (
+              <div className="space-y-2">
+                {gmailApprovals.map((approval) => (
+                  <div
+                    key={approval._id}
+                    className="flex items-center gap-2 rounded-md border border-amber-200 bg-amber-50 px-2.5 py-2 dark:border-amber-900/60 dark:bg-amber-950/30"
+                  >
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-xs font-medium text-amber-900 dark:text-amber-100">
+                        {approval.summary || "Gmail draft awaiting approval"}
+                      </p>
+                      <p className="text-[10px] text-amber-700/80 dark:text-amber-200/70">
+                        {approval.aiGenerated ? "AI draft" : "Human draft"}
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => handleApproveGmail(approval._id)}
+                      disabled={approvalActionId === approval._id}
+                      className="flex h-8 w-8 items-center justify-center rounded-md bg-emerald-600 text-white hover:bg-emerald-700 disabled:opacity-40"
+                      title="Approve and queue"
+                    >
+                      <CheckCircle2 className="h-4 w-4" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleRejectGmail(approval._id)}
+                      disabled={approvalActionId === approval._id}
+                      className="flex h-8 w-8 items-center justify-center rounded-md bg-red-600 text-white hover:bg-red-700 disabled:opacity-40"
+                      title="Reject draft"
+                    >
+                      <XCircle className="h-4 w-4" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-[11px] text-gray-400">
+                Gmail replies are saved for approval before sending.
+              </p>
+            )}
+          </div>
+        )}
         {composeDisabled && (
           <p className="mb-2 text-xs text-gray-400">
             Reopen this conversation before sending a reply.
@@ -397,17 +561,23 @@ export default function MessageThread() {
                 handleSend(event);
               }
             }}
-            placeholder={composeDisabled ? "Conversation is closed" : "Type a message..."}
+            placeholder={
+              composeDisabled
+                ? "Conversation is closed"
+                : isGmailConversation
+                  ? "Write a Gmail draft..."
+                  : "Type a message..."
+            }
             rows={1}
             className="max-h-36 flex-1 resize-none rounded-xl border border-gray-200 bg-gray-50 px-3.5 py-2 text-sm outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-200 disabled:cursor-not-allowed disabled:opacity-60 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200"
           />
           <button
             type="submit"
-            disabled={!body.trim() || messageSending || composeDisabled}
+            disabled={!body.trim() || sending || composeDisabled}
             className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-xl bg-blue-600 text-white transition-colors hover:bg-blue-700 disabled:opacity-40"
-            title="Send message"
+            title={isGmailConversation ? "Create draft for approval" : "Send message"}
           >
-            <Send className={`h-4 w-4 ${messageSending ? "animate-pulse" : ""}`} />
+            <Send className={`h-4 w-4 ${sending ? "animate-pulse" : ""}`} />
           </button>
         </div>
       </form>

@@ -27,6 +27,32 @@ export const fetchChannels = createAsyncThunk(
   },
 );
 
+export const fetchWhatsappHealth = createAsyncThunk(
+  "inbox/fetchWhatsappHealth",
+  async (_, { rejectWithValue }) => {
+    try {
+      return await inboxApi.listWhatsappAccountHealth();
+    } catch (error) {
+      return rejectWithValue(
+        error.response?.data?.message || "Failed to load WhatsApp health",
+      );
+    }
+  },
+);
+
+export const reconnectWhatsappAccount = createAsyncThunk(
+  "inbox/reconnectWhatsappAccount",
+  async ({ accountId, payload }, { rejectWithValue }) => {
+    try {
+      return await inboxApi.reconnectWhatsappAccount(accountId, payload);
+    } catch (error) {
+      return rejectWithValue(
+        error.response?.data?.message || "Failed to reconnect WhatsApp account",
+      );
+    }
+  },
+);
+
 export const fetchConversations = createAsyncThunk(
   "inbox/fetchConversations",
   async (params = {}, { rejectWithValue }) => {
@@ -74,6 +100,19 @@ export const sendMessage = createAsyncThunk(
     } catch (error) {
       return rejectWithValue(
         error.response?.data?.message || "Failed to send message",
+      );
+    }
+  },
+);
+
+export const createGmailDraft = createAsyncThunk(
+  "inbox/createGmailDraft",
+  async ({ conversationId, payload }, { rejectWithValue }) => {
+    try {
+      return await inboxApi.createGmailDraft(conversationId, payload);
+    } catch (error) {
+      return rejectWithValue(
+        error.response?.data?.message || "Failed to create Gmail draft",
       );
     }
   },
@@ -150,6 +189,9 @@ const initialState = {
 
   channels: [],
   channelsLoading: false,
+  whatsappHealth: [],
+  whatsappHealthLoading: false,
+  whatsappReconnectLoadingById: {},
 
   conversations: [],
   conversationsTotal: 0,
@@ -164,6 +206,7 @@ const initialState = {
   messagesPagination: null,
   messagesLoading: false,
   messageSending: false,
+  gmailDraftCreating: false,
 
   filters: {
     status: "open",
@@ -269,6 +312,62 @@ const inboxSlice = createSlice({
         state.error = action.payload;
       })
 
+      .addCase(fetchWhatsappHealth.pending, (state) => {
+        state.whatsappHealthLoading = true;
+      })
+      .addCase(fetchWhatsappHealth.fulfilled, (state, action) => {
+        state.whatsappHealthLoading = false;
+        state.whatsappHealth = Array.isArray(action.payload)
+          ? action.payload
+          : [];
+      })
+      .addCase(fetchWhatsappHealth.rejected, (state, action) => {
+        state.whatsappHealthLoading = false;
+        state.error = action.payload;
+      })
+
+      .addCase(reconnectWhatsappAccount.pending, (state, action) => {
+        const id = action.meta.arg?.accountId;
+        if (id) state.whatsappReconnectLoadingById[id] = true;
+        state.error = null;
+      })
+      .addCase(reconnectWhatsappAccount.fulfilled, (state, action) => {
+        const account = action.payload;
+        const id = action.meta.arg?.accountId || account?._id;
+        if (id) state.whatsappReconnectLoadingById[id] = false;
+
+        if (account?._id) {
+          const channelIndex = state.channels.findIndex(
+            (item) => item._id === account._id,
+          );
+          if (channelIndex !== -1) {
+            state.channels[channelIndex] = {
+              ...state.channels[channelIndex],
+              ...account,
+            };
+          }
+
+          const healthIndex = state.whatsappHealth.findIndex(
+            (item) => item.account?._id === account._id,
+          );
+          if (healthIndex !== -1) {
+            state.whatsappHealth[healthIndex] = {
+              ...state.whatsappHealth[healthIndex],
+              account,
+              status: account.status,
+              consecutiveErrors: account.consecutiveErrors || 0,
+              lastError: account.lastError || null,
+              needsReconnect: false,
+            };
+          }
+        }
+      })
+      .addCase(reconnectWhatsappAccount.rejected, (state, action) => {
+        const id = action.meta.arg?.accountId;
+        if (id) state.whatsappReconnectLoadingById[id] = false;
+        state.error = action.payload;
+      })
+
       .addCase(fetchConversations.pending, (state) => {
         state.conversationsLoading = true;
         state.error = null;
@@ -337,6 +436,23 @@ const inboxSlice = createSlice({
       })
       .addCase(sendMessage.rejected, (state, action) => {
         state.messageSending = false;
+        state.error = action.payload;
+      })
+
+      .addCase(createGmailDraft.pending, (state) => {
+        state.gmailDraftCreating = true;
+        state.error = null;
+      })
+      .addCase(createGmailDraft.fulfilled, (state, action) => {
+        state.gmailDraftCreating = false;
+        const message = action.payload?.message;
+        if (!message) return;
+
+        const exists = state.messages.some((item) => item._id === message._id);
+        if (!exists) state.messages.push(message);
+      })
+      .addCase(createGmailDraft.rejected, (state, action) => {
+        state.gmailDraftCreating = false;
         state.error = action.payload;
       })
 

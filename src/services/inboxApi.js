@@ -12,6 +12,19 @@ export async function listChannelAccounts(params = {}) {
   return res.data.data;
 }
 
+export async function listWhatsappAccountHealth() {
+  const res = await api.get("/integrations/whatsapp/accounts/health");
+  return res.data.data;
+}
+
+export async function reconnectWhatsappAccount(id, payload) {
+  const res = await api.post(
+    `/integrations/whatsapp/accounts/${id}/reconnect`,
+    payload,
+  );
+  return res.data.data;
+}
+
 export async function getChannelAccount(id) {
   const res = await api.get(`${BASE}/channels/${id}`);
   return res.data.data;
@@ -99,6 +112,35 @@ export async function getMessage(id) {
 export async function sendMessage(conversationId, payload) {
   const res = await api.post(
     `${BASE}/conversations/${conversationId}/messages`,
+    payload,
+  );
+  return res.data.data;
+}
+
+export async function createGmailDraft(conversationId, payload) {
+  const res = await api.post(
+    `${BASE}/gmail/conversations/${conversationId}/draft`,
+    payload,
+  );
+  return res.data.data;
+}
+
+export async function listGmailApprovals(params = {}) {
+  const res = await api.get(`${BASE}/gmail/approvals`, { params });
+  return res.data;
+}
+
+export async function approveGmailDraft(approvalRequestId, payload = {}) {
+  const res = await api.post(
+    `${BASE}/gmail/approvals/${approvalRequestId}/approve`,
+    payload,
+  );
+  return res.data.data;
+}
+
+export async function rejectGmailDraft(approvalRequestId, payload = {}) {
+  const res = await api.post(
+    `${BASE}/gmail/approvals/${approvalRequestId}/reject`,
     payload,
   );
   return res.data.data;
