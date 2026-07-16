@@ -2,7 +2,7 @@ import { describe, it, expect } from "vitest";
 import { render, screen } from "@testing-library/react";
 import { Provider } from "react-redux";
 import { configureStore } from "@reduxjs/toolkit";
-import { MemoryRouter, Route, Routes } from "react-router-dom";
+import { MemoryRouter, Route, Routes, useLocation } from "react-router-dom";
 import authReducer from "../store/slices/authSlice";
 import { ProtectedRoute, PublicRoute } from "../components/routes/ProtectedRoute";
 
@@ -13,13 +13,30 @@ function makeStore(preloadedAuth) {
   });
 }
 
-function renderWithProviders(ui, { store, route = "/" } = {}) {
+function FromStateDisplay() {
+  const location = useLocation();
+  return (
+    <div data-testid="from-state">
+      {JSON.stringify(location.state?.from ?? null)}
+    </div>
+  );
+}
+
+function renderWithRouteTree(ui, { store, route = "/", entryRoutes } = {}) {
+  const routes = entryRoutes || (
+    <>
+      <Route path="/login" element={<div>Login Page</div>} />
+      <Route path="/admin" element={<div>Admin Dashboard</div>} />
+      <Route path="/superadmin" element={<div>Super Admin Dashboard</div>} />
+      <Route path="/marketing" element={<div>Marketing Dashboard</div>} />
+      <Route path="/dashboard/settings" element={<div>Dashboard Settings</div>} />
+      <Route path="*" element={ui} />
+    </>
+  );
   return render(
     <Provider store={store}>
       <MemoryRouter initialEntries={[route]}>
-        <Routes>
-          <Route path="*" element={ui} />
-        </Routes>
+        <Routes>{routes}</Routes>
       </MemoryRouter>
     </Provider>,
   );
@@ -34,7 +51,7 @@ describe("ProtectedRoute", () => {
       isInitialized: false,
       error: null,
     });
-    renderWithProviders(
+    renderWithRouteTree(
       <ProtectedRoute>
         <div>Secret</div>
       </ProtectedRoute>,
@@ -52,16 +69,14 @@ describe("ProtectedRoute", () => {
       isInitialized: true,
       error: null,
     });
-    renderWithProviders(
+    renderWithRouteTree(
       <ProtectedRoute>
         <div>Secret</div>
       </ProtectedRoute>,
       { store, route: "/dashboard" },
     );
     expect(screen.queryByText("Secret")).not.toBeInTheDocument();
-    // MemoryRouter doesn't actually navigate, but the Navigate element
-    // is rendered. Check that it was rendered (which means redirect happens).
-    expect(screen.queryByText("Secret")).not.toBeInTheDocument();
+    expect(screen.getByText("Login Page")).toBeInTheDocument();
   });
 
   it("preserves state.from when redirecting unauthenticated users", () => {
@@ -72,7 +87,7 @@ describe("ProtectedRoute", () => {
       isInitialized: true,
       error: null,
     });
-    const { container } = render(
+    render(
       <Provider store={store}>
         <MemoryRouter initialEntries={["/dashboard/settings"]}>
           <Routes>
@@ -84,15 +99,15 @@ describe("ProtectedRoute", () => {
                 </ProtectedRoute>
               }
             />
-            <Route path="/login" element={<div>Login Page</div>} />
+            <Route path="/login" element={<FromStateDisplay />} />
           </Routes>
         </MemoryRouter>
       </Provider>,
     );
-
-    // Navigate should render with state.from = current location
-    expect(container.querySelector('[data-rre]')).not.toBeInTheDocument();
     expect(screen.queryByText("Secret")).not.toBeInTheDocument();
+    const fromState = screen.getByTestId("from-state").textContent;
+    const parsed = JSON.parse(fromState);
+    expect(parsed.pathname).toBe("/dashboard/settings");
   });
 
   it("renders children when authenticated and initialized", () => {
@@ -103,7 +118,7 @@ describe("ProtectedRoute", () => {
       isInitialized: true,
       error: null,
     });
-    renderWithProviders(
+    renderWithRouteTree(
       <ProtectedRoute>
         <div>Secret</div>
       </ProtectedRoute>,
@@ -120,13 +135,14 @@ describe("ProtectedRoute", () => {
       isInitialized: true,
       error: null,
     });
-    renderWithProviders(
+    renderWithRouteTree(
       <ProtectedRoute allowedRoles={["admin"]}>
         <div>Admin Only</div>
       </ProtectedRoute>,
-      { store },
+      { store, route: "/admin/settings" },
     );
     expect(screen.queryByText("Admin Only")).not.toBeInTheDocument();
+    expect(screen.getByText("Marketing Dashboard")).toBeInTheDocument();
   });
 });
 
@@ -139,7 +155,7 @@ describe("PublicRoute", () => {
       isInitialized: false,
       error: null,
     });
-    renderWithProviders(
+    renderWithRouteTree(
       <PublicRoute>
         <div>Public Content</div>
       </PublicRoute>,
@@ -157,7 +173,7 @@ describe("PublicRoute", () => {
       isInitialized: true,
       error: null,
     });
-    renderWithProviders(
+    renderWithRouteTree(
       <PublicRoute>
         <div>Public Content</div>
       </PublicRoute>,
@@ -174,13 +190,14 @@ describe("PublicRoute", () => {
       isInitialized: true,
       error: null,
     });
-    renderWithProviders(
+    renderWithRouteTree(
       <PublicRoute>
         <div>Public Content</div>
       </PublicRoute>,
-      { store },
+      { store, route: "/login" },
     );
     expect(screen.queryByText("Public Content")).not.toBeInTheDocument();
+    expect(screen.getByText("Admin Dashboard")).toBeInTheDocument();
   });
 
   it("redirects authenticated superadmin user to /superadmin", () => {
@@ -191,12 +208,13 @@ describe("PublicRoute", () => {
       isInitialized: true,
       error: null,
     });
-    renderWithProviders(
+    renderWithRouteTree(
       <PublicRoute>
         <div>Public Content</div>
       </PublicRoute>,
-      { store },
+      { store, route: "/login" },
     );
     expect(screen.queryByText("Public Content")).not.toBeInTheDocument();
+    expect(screen.getByText("Super Admin Dashboard")).toBeInTheDocument();
   });
 });
