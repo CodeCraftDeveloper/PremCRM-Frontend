@@ -7,6 +7,7 @@ const initialState = {
   user: null,
   isAuthenticated: false,
   isLoading: false,
+  isInitialized: false,
   error: null,
 };
 
@@ -121,6 +122,7 @@ const authSlice = createSlice({
         state.isLoading = false;
         state.isAuthenticated = true;
         state.user = action.payload.user;
+        state.isInitialized = true;
       })
       .addCase(login.rejected, (state, action) => {
         state.isLoading = false;
@@ -130,22 +132,21 @@ const authSlice = createSlice({
       .addCase(logout.fulfilled, (state) => {
         state.user = null;
         state.isAuthenticated = false;
+        state.isInitialized = true;
         state.error = null;
       })
-      // Get Me
-      .addCase(getMe.pending, (state) => {
-        state.isLoading = true;
-      })
+      // Get Me — bootstrap only; does not drive isLoading
+      .addCase(getMe.pending, () => {})
       .addCase(getMe.fulfilled, (state, action) => {
-        state.isLoading = false;
         state.user = action.payload;
         state.isAuthenticated = true;
+        state.isInitialized = true;
       })
       .addCase(getMe.rejected, (state, action) => {
-        state.isLoading = false;
         state.error = action.payload;
         state.isAuthenticated = false;
         state.user = null;
+        state.isInitialized = true;
       })
       // Update Profile
       .addCase(updateProfile.pending, (state) => {
