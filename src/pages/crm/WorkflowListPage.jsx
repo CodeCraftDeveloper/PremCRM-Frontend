@@ -21,7 +21,7 @@ const STATUS_STYLES = {
 const WorkflowListPage = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
-  const { workflows, workflowsLoading, workflowsTotal } = useSelector(
+  const { workflows, workflowsLoading } = useSelector(
     (s) => s.workflowV2,
   );
   const [search, setSearch] = useState("");

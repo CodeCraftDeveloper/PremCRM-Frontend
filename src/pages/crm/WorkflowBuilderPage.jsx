@@ -11,7 +11,6 @@ import {
   updateNode,
   removeNode,
   addEdge,
-  removeEdge,
   moveNode,
   selectNode,
   clearSelection,
@@ -473,7 +472,7 @@ const WorkflowBuilderPage = () => {
   } = useSelector((s) => s.workflowV2);
 
   const canvasRef = useRef(null);
-  const [pan, setPan] = useState({ x: 0, y: 0 });
+  const [_pan] = useState({ x: 0, y: 0 });
   const [zoom, setZoom] = useState(1);
   const [dragging, setDragging] = useState(null);
   const [connecting, setConnecting] = useState(null);

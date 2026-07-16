@@ -177,6 +177,9 @@ const PublicBlogDetailPage = lazy(() =>
 const MarketingDashboard = lazy(
   () => import("./pages/marketing/MarketingDashboard"),
 );
+const SocialAgentDashboard = lazy(
+  () => import("./pages/marketing/SocialAgentDashboard"),
+);
 import * as socketService from "./services/socket";
 import ConnectionBanner from "./components/ui/ConnectionBanner";
 
@@ -865,6 +868,14 @@ function App() {
               </Lazy>
             }
           />
+          <Route
+            path="social"
+            element={
+              <Lazy>
+                <SocialAgentDashboard />
+              </Lazy>
+            }
+          />
         </Route>
 
         {/* Marketing Routes */}
@@ -1073,6 +1084,14 @@ function App() {
             element={
               <Lazy>
                 <Settings />
+              </Lazy>
+            }
+          />
+          <Route
+            path="social"
+            element={
+              <Lazy>
+                <SocialAgentDashboard />
               </Lazy>
             }
           />

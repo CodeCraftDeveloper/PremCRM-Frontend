@@ -6,7 +6,7 @@ import { setTokens, clearTokens } from "../../services/api";
 const initialState = {
   user: null,
   isAuthenticated: false,
-  isLoading: false,
+  isLoading: true, // start true so ProtectedRoute shows spinner during bootstrap
   error: null,
 };
 

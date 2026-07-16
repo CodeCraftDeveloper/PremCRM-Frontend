@@ -22,6 +22,7 @@ import {
   Layers,
   Ticket,
   MessageSquare,
+  Share2,
 } from "lucide-react";
 import {
   toggleSidebar,
@@ -174,11 +175,11 @@ const Sidebar = ({ role = "admin" }) => {
           { path: "/admin/users", icon: Users, label: "Users" },
           { path: "/admin/events", icon: Calendar, label: "Events" },
           { path: "/admin/clients", icon: Briefcase, label: "Clients" },
-          { path: "/admin/leads", icon: Target, label: "Leads" },
           { path: "/admin/tickets", icon: Ticket, label: "Tickets" },
           { path: "/admin/inbox", icon: MessageSquare, label: "Inbox" },
           { path: "/admin/queries", icon: FileSpreadsheet, label: "Queries" },
           { path: "/admin/websites", icon: Globe, label: "Websites" },
+          { path: "/admin/social", icon: Share2, label: "Social Agent" },
           {
             path: "/admin/marketing/performance",
             icon: TrendingUp,
@@ -189,7 +190,6 @@ const Sidebar = ({ role = "admin" }) => {
         ]
       : [
           { path: "/marketing/clients", icon: Briefcase, label: "My Clients" },
-          { path: "/marketing/leads", icon: Target, label: "My Leads" },
           { path: "/marketing/tickets", icon: Ticket, label: "Tickets" },
           { path: "/marketing/inbox", icon: MessageSquare, label: "Inbox" },
           {
@@ -198,6 +198,7 @@ const Sidebar = ({ role = "admin" }) => {
             label: "Queries",
           },
           { path: "/marketing/events", icon: Calendar, label: "Events" },
+          { path: "/marketing/social", icon: Share2, label: "Social Agent" },
           { path: "/marketing/settings", icon: Building2, label: "Settings" },
         ]),
   ];

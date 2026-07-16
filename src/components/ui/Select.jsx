@@ -11,6 +11,7 @@ const Select = forwardRef(
       placeholder = "Select an option",
       className = "",
       required = false,
+      children,
       ...props
     },
     ref,
@@ -38,12 +39,13 @@ const Select = forwardRef(
         )}
         <div className="relative">
           <select ref={ref} className={selectClasses} {...props}>
-            <option value="">{placeholder}</option>
+            {placeholder && <option value="">{placeholder}</option>}
             {options.map((option) => (
               <option key={option.value} value={option.value}>
                 {option.label}
               </option>
             ))}
+            {children}
           </select>
           <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3">
             <ChevronDown className="h-5 w-5 text-gray-400" />
