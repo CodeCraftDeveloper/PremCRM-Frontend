@@ -22,26 +22,6 @@ function FromStateDisplay() {
   );
 }
 
-function renderWithRouteTree(ui, { store, route = "/", entryRoutes } = {}) {
-  const routes = entryRoutes || (
-    <>
-      <Route path="/login" element={<div>Login Page</div>} />
-      <Route path="/admin" element={<div>Admin Dashboard</div>} />
-      <Route path="/superadmin" element={<div>Super Admin Dashboard</div>} />
-      <Route path="/marketing" element={<div>Marketing Dashboard</div>} />
-      <Route path="/dashboard/settings" element={<div>Dashboard Settings</div>} />
-      <Route path="*" element={ui} />
-    </>
-  );
-  return render(
-    <Provider store={store}>
-      <MemoryRouter initialEntries={[route]}>
-        <Routes>{routes}</Routes>
-      </MemoryRouter>
-    </Provider>,
-  );
-}
-
 describe("ProtectedRoute", () => {
   it("renders loading spinner while not initialized", () => {
     const store = makeStore({
@@ -51,14 +31,24 @@ describe("ProtectedRoute", () => {
       isInitialized: false,
       error: null,
     });
-    renderWithRouteTree(
-      <ProtectedRoute>
-        <div>Secret</div>
-      </ProtectedRoute>,
-      { store },
+    const { container } = render(
+      <Provider store={store}>
+        <MemoryRouter initialEntries={["/dashboard"]}>
+          <Routes>
+            <Route
+              path="/dashboard"
+              element={
+                <ProtectedRoute>
+                  <div>Secret</div>
+                </ProtectedRoute>
+              }
+            />
+          </Routes>
+        </MemoryRouter>
+      </Provider>,
     );
     expect(screen.queryByText("Secret")).not.toBeInTheDocument();
-    expect(screen.getByRole("status")).toBeInTheDocument();
+    expect(container.querySelector(".animate-spin")).toBeInTheDocument();
   });
 
   it("redirects to /login when unauthenticated after initialization", () => {
@@ -69,11 +59,22 @@ describe("ProtectedRoute", () => {
       isInitialized: true,
       error: null,
     });
-    renderWithRouteTree(
-      <ProtectedRoute>
-        <div>Secret</div>
-      </ProtectedRoute>,
-      { store, route: "/dashboard" },
+    render(
+      <Provider store={store}>
+        <MemoryRouter initialEntries={["/dashboard"]}>
+          <Routes>
+            <Route
+              path="/dashboard"
+              element={
+                <ProtectedRoute>
+                  <div>Secret</div>
+                </ProtectedRoute>
+              }
+            />
+            <Route path="/login" element={<div>Login Page</div>} />
+          </Routes>
+        </MemoryRouter>
+      </Provider>,
     );
     expect(screen.queryByText("Secret")).not.toBeInTheDocument();
     expect(screen.getByText("Login Page")).toBeInTheDocument();
@@ -105,8 +106,7 @@ describe("ProtectedRoute", () => {
       </Provider>,
     );
     expect(screen.queryByText("Secret")).not.toBeInTheDocument();
-    const fromState = screen.getByTestId("from-state").textContent;
-    const parsed = JSON.parse(fromState);
+    const parsed = JSON.parse(screen.getByTestId("from-state").textContent);
     expect(parsed.pathname).toBe("/dashboard/settings");
   });
 
@@ -118,13 +118,23 @@ describe("ProtectedRoute", () => {
       isInitialized: true,
       error: null,
     });
-    renderWithRouteTree(
-      <ProtectedRoute>
-        <div>Secret</div>
-      </ProtectedRoute>,
-      { store },
+    render(
+      <Provider store={store}>
+        <MemoryRouter initialEntries={["/admin/settings"]}>
+          <Routes>
+            <Route
+              path="/admin/settings"
+              element={
+                <ProtectedRoute allowedRoles={["admin"]}>
+                  <div>Admin Only</div>
+                </ProtectedRoute>
+              }
+            />
+          </Routes>
+        </MemoryRouter>
+      </Provider>,
     );
-    expect(screen.getByText("Secret")).toBeInTheDocument();
+    expect(screen.getByText("Admin Only")).toBeInTheDocument();
   });
 
   it("redirects when user role is not in allowedRoles", () => {
@@ -135,11 +145,22 @@ describe("ProtectedRoute", () => {
       isInitialized: true,
       error: null,
     });
-    renderWithRouteTree(
-      <ProtectedRoute allowedRoles={["admin"]}>
-        <div>Admin Only</div>
-      </ProtectedRoute>,
-      { store, route: "/admin/settings" },
+    render(
+      <Provider store={store}>
+        <MemoryRouter initialEntries={["/admin/settings"]}>
+          <Routes>
+            <Route
+              path="/admin/settings"
+              element={
+                <ProtectedRoute allowedRoles={["admin"]}>
+                  <div>Admin Only</div>
+                </ProtectedRoute>
+              }
+            />
+            <Route path="/marketing" element={<div>Marketing Dashboard</div>} />
+          </Routes>
+        </MemoryRouter>
+      </Provider>,
     );
     expect(screen.queryByText("Admin Only")).not.toBeInTheDocument();
     expect(screen.getByText("Marketing Dashboard")).toBeInTheDocument();
@@ -155,14 +176,24 @@ describe("PublicRoute", () => {
       isInitialized: false,
       error: null,
     });
-    renderWithRouteTree(
-      <PublicRoute>
-        <div>Public Content</div>
-      </PublicRoute>,
-      { store },
+    const { container } = render(
+      <Provider store={store}>
+        <MemoryRouter initialEntries={["/login"]}>
+          <Routes>
+            <Route
+              path="/login"
+              element={
+                <PublicRoute>
+                  <div>Public Content</div>
+                </PublicRoute>
+              }
+            />
+          </Routes>
+        </MemoryRouter>
+      </Provider>,
     );
     expect(screen.queryByText("Public Content")).not.toBeInTheDocument();
-    expect(screen.getByRole("status")).toBeInTheDocument();
+    expect(container.querySelector(".animate-spin")).toBeInTheDocument();
   });
 
   it("renders children when not authenticated", () => {
@@ -173,11 +204,21 @@ describe("PublicRoute", () => {
       isInitialized: true,
       error: null,
     });
-    renderWithRouteTree(
-      <PublicRoute>
-        <div>Public Content</div>
-      </PublicRoute>,
-      { store },
+    render(
+      <Provider store={store}>
+        <MemoryRouter initialEntries={["/login"]}>
+          <Routes>
+            <Route
+              path="/login"
+              element={
+                <PublicRoute>
+                  <div>Public Content</div>
+                </PublicRoute>
+              }
+            />
+          </Routes>
+        </MemoryRouter>
+      </Provider>,
     );
     expect(screen.getByText("Public Content")).toBeInTheDocument();
   });
@@ -190,11 +231,22 @@ describe("PublicRoute", () => {
       isInitialized: true,
       error: null,
     });
-    renderWithRouteTree(
-      <PublicRoute>
-        <div>Public Content</div>
-      </PublicRoute>,
-      { store, route: "/login" },
+    render(
+      <Provider store={store}>
+        <MemoryRouter initialEntries={["/login"]}>
+          <Routes>
+            <Route
+              path="/login"
+              element={
+                <PublicRoute>
+                  <div>Public Content</div>
+                </PublicRoute>
+              }
+            />
+            <Route path="/admin" element={<div>Admin Dashboard</div>} />
+          </Routes>
+        </MemoryRouter>
+      </Provider>,
     );
     expect(screen.queryByText("Public Content")).not.toBeInTheDocument();
     expect(screen.getByText("Admin Dashboard")).toBeInTheDocument();
@@ -208,11 +260,22 @@ describe("PublicRoute", () => {
       isInitialized: true,
       error: null,
     });
-    renderWithRouteTree(
-      <PublicRoute>
-        <div>Public Content</div>
-      </PublicRoute>,
-      { store, route: "/login" },
+    render(
+      <Provider store={store}>
+        <MemoryRouter initialEntries={["/login"]}>
+          <Routes>
+            <Route
+              path="/login"
+              element={
+                <PublicRoute>
+                  <div>Public Content</div>
+                </PublicRoute>
+              }
+            />
+            <Route path="/superadmin" element={<div>Super Admin Dashboard</div>} />
+          </Routes>
+        </MemoryRouter>
+      </Provider>,
     );
     expect(screen.queryByText("Public Content")).not.toBeInTheDocument();
     expect(screen.getByText("Super Admin Dashboard")).toBeInTheDocument();
