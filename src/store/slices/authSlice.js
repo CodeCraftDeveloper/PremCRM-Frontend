@@ -109,6 +109,7 @@ const authSlice = createSlice({
     setUser: (state, action) => {
       state.user = action.payload;
       state.isAuthenticated = !!action.payload;
+      state.isInitialized = true;
     },
   },
   extraReducers: (builder) => {
@@ -136,7 +137,6 @@ const authSlice = createSlice({
         state.error = null;
       })
       // Get Me — bootstrap only; does not drive isLoading
-      .addCase(getMe.pending, () => {})
       .addCase(getMe.fulfilled, (state, action) => {
         state.user = action.payload;
         state.isAuthenticated = true;

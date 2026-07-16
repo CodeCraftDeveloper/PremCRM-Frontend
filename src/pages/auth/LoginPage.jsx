@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -26,6 +26,7 @@ export const LoginPage = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const { isLoading } = useSelector((state) => state.auth);
+  const location = useLocation();
   const [showPassword, setShowPassword] = useState(false);
   const [isAccessWindowOpen, setIsAccessWindowOpen] = useState(false);
   const [accessLink, setAccessLink] = useState("");
@@ -48,6 +49,19 @@ export const LoginPage = () => {
       const result = await dispatch(login(data)).unwrap();
 
       toast.success(`Welcome back, ${result.user.name}!`);
+
+      const destination = location.state?.from;
+      if (destination?.pathname) {
+        const { pathname, search, hash } = destination;
+        if (
+          pathname.startsWith("/") &&
+          !pathname.startsWith("//") &&
+          !pathname.includes(":")
+        ) {
+          navigate(`${pathname}${search || ""}${hash || ""}`);
+          return;
+        }
+      }
 
       if (result.user.role === "superadmin") {
         navigate("/superadmin");
